@@ -1,0 +1,45 @@
+<div :class="['bbn-iblock', componentClass]"
+     @focusout="focusout"
+     @mouseenter="over = true"
+     @mouseleave="over = false"
+     >
+  <bbn-anonymous v-if="isEditing && component"
+            :is="component"
+            v-model="currentValue"
+            v-bind="componentOptions"/>
+  <bbn-anonymous v-else-if="isEditing"
+            :is="componentObject"
+            v-model="currentValue"
+            :source="source"
+            :class="{'edit-block' : isEditing}"
+          
+  ></bbn-anonymous>
+  <bbn-anonymous v-else
+             :is="componentObject"
+             v-model="currentValue"
+             :source="source"
+             :class="{'edit-block' : isEditing}"
+  ></bbn-anonymous>
+  <div :style="{
+      position: 'absolute',
+      top: '0px',
+      right: '-8rem',
+      width: '8rem',
+      paddingLeft: '1rem',
+      textAlign: 'left',
+      display: isEditing || over ? 'block' : 'none'
+    }">
+    <i :class="'bbn-p inline ' + editIcon"
+      @click.stop="edit"
+      v-if="!isEditing"
+    ></i>
+    <i :class="'bbn-p inline ' + cancelIcon"
+      @click.stop="onCancel"
+      v-if="isEditing" 
+    ></i>
+    <i :class="'bbn-p inline ' + saveIcon"
+      @click.stop="save"
+      v-if="isEditing" 
+    ></i>
+  </div>
+</div>

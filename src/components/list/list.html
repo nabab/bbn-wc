@@ -1,0 +1,110 @@
+<div :class="[componentClass, 'bbn-floater-list']"
+     @touchstart="touchstart"
+     @mouseleave="mouseleave"
+     @touchmove="touchmove"
+     @touchend="touchend"
+     :style="currentStyle">
+  <div class="bbn-hidden"
+       v-if="$slots.default"
+       ref="slot">
+    <slot></slot>
+  </div>
+  <ul v-if="filteredData.length && ready"
+      :class="['bbn-menulist', mode]">
+    <template v-for="(li, idx) in filteredData">
+      <li v-if="groupable
+            && (!pageable
+              || ((idx >= start)
+                && (idx < start + currentLimit)))
+            && ((idx === 0)
+              || (idx === start)
+              || (li.data[sourceGroup] !== filteredData[idx-1].data[sourceGroup]))"
+          class="bbn-list-group-li bbn-m bbn-header bbn-hspadded bbn-unselectable bbn-vmiddle"
+          :style="groupStyle"
+          :group="li.data[sourceGroup]">
+        <bbn-anonymous v-if="groupComponent"
+                   :is="groupComponent"
+                   v-bind="li"
+                   :key="'groupComponent' + li.key"/>
+        <div v-else
+             v-text="li.data[sourceGroup]"
+             class="bbn-spadded"/>
+      </li>
+      <li v-if="!pageable
+            || ((idx >= start)
+              && (idx < start + currentLimit))
+            || (!!pageable && !!serverPaging)"
+          @mouseover="mouseenter($event, idx)"
+          :ref="'li' + idx"
+          :key="uid ? li.data[uid] : li.key"
+          @click="select(idx)"
+          @mousedown="select(idx)"
+          :class="{
+            'bbn-no-padding': !!component,
+            'bbn-state-default': true,
+            'bbn-disabled': !component && !!li.data && !!li.data.disabled,
+            'bbn-state-selected': isSelected(idx),
+            'bbn-state-hover': (overIdx === idx),
+            'bbn-alt': alternateBackground && (idx % 2)
+          }">
+        <bbn-anonymous v-if="currentComponent"
+                   :is="currentComponent"
+                   v-bind="componentOptions"
+                   :source="li.data"
+                   :index="li.index"
+                   @remove="remove(idx)"
+                   @hook:mounted="selfEmit(true)"
+                   :key="li.key"/>
+        <bbn-anonymous v-else
+                  :is="li.data && li.data.url && !li.data[children] ? 'a' : 'span'"
+                  @click.prevent="() => {}"
+                  class="bbn-w-100"
+                  :href="li.data && li.data.url ? li.data.url : null"
+                  :key="li.key">
+          <span class="space"
+                v-if="selection || (mode === 'options')">
+            <i v-if="li.data.selected"
+               class="nf nf-fa-check"></i>
+          </span>
+          <span v-if="hasIcons"
+                class="space bbn-c bbn-iblock">
+            <i v-if="li.data[sourceIcon]"
+               :class="'bbn-m ' + li.data[sourceIcon]"></i>
+          </span>
+          <span class="text"
+                v-html="li.data[sourceText]"></span>
+        </bbn-anonymous>
+        <div v-if="!currentComponent && li.data[children] && li.data[children].length"
+             :class="['bbn-block', 'bbn-top-right', 'bbn-hspadded', 'bbn-h-100', {
+              'bbn-vmiddle': (origin === 'floater')
+             }]">
+          <i class="nf nf-fa-chevron_right"/>
+        </div>
+        <bbn-floater v-if="isOpened
+                      && children
+                      && (origin === 'floater')
+                      && li.data[children]
+                      && (overIdx === idx)"
+                    :uid="uid"
+                    @select="select"
+                    :level="level + 1"
+                    :mode="li.data.mode || 'free'"
+                    :source="li.data[children]"
+                    :element="getRef('li' + idx)"
+                    orientation="horizontal">
+        </bbn-floater>
+        <bbn-list v-else-if="(origin !== 'floater')
+                    && children
+                    && li.data[children]
+                    && li.opened"
+                  :level="level + 1"
+                  :mode="li.data.mode || 'free'"
+                  :uid="uid"
+                  :children="children"
+                  :source="li.data[children]"
+                  :key="'sublist-' + li.key">
+        </bbn-list>
+      </li>
+    </template>
+  </ul>
+</div>

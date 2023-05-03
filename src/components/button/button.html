@@ -1,0 +1,52 @@
+<button :class="[
+                  {
+                    'bbn-button-icon-only': notext,
+                    'bbn-active': active
+                  },
+                  'bbn-iblock',
+                  componentClass
+                ]"
+        :aria-label="text"
+        @click.stop="click($event)"
+        @focus="focus($event)"
+        @blur="blur($event)"
+        @keydown="keydown($event)"
+        @keyup="keyup($event)"
+        @mouseenter="over($event)"
+        @mouseleave="out($event)"
+        :type="type"
+        :disabled="isDisabled"
+        :title="titleString"
+        :style="currentStyle"
+        v-focused="focused">
+  <span v-if="icon && (iconPosition === 'left')"
+        :class="['bbn-button-icon', {'bbn-middle': notext}]">
+    <i :class="icon"/>
+  </span>
+  <span v-if="!notext && text"
+        v-html="text"
+        :style="{
+          paddingLeft: icon && (iconPosition === 'left') ? (secondary ? '1rem' : '0.3rem') : '',
+          paddingRight: icon && (iconPosition === 'right') ? (secondary ? '1rem' : '0.3rem') : ''
+        }"
+        :class="{'bbn-ellipsis': ellipsis}"/>
+  <span v-else-if="!notext"><slot/></span>
+  <span v-if="icon && (iconPosition === 'right')" class="bbn-iblock bbn-m">
+    <i :class="icon"/>
+  </span>
+  <div v-if="secondary"
+       class="bbn-overlay">
+    <div class="bbn-abs"
+         :style="{
+           transform: 'scale(0.7)',
+           bottom: '0.15rem',
+           right: '0.15rem',
+           height: '50%'
+         }">
+      <i :class="secondary + ' bbn-button-secondary'"
+        :style="{
+          color: secondaryColor,
+        }"/>
+    </div>
+  </div>
+</button>

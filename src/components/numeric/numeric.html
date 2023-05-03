@@ -1,0 +1,87 @@
+<div :class="[componentClass, 'bbn-iblock', 'bbn-textbox', {'bbn-disabled': !!isDisabled}]"
+     @click.stop>
+  <div class="bbn-flex-width">
+    <div class="bbn-flex-fill">
+      <input tabindex="0"
+             autocomplete="off"
+             v-model="currentValue"
+             :name="name"
+             ref="element"
+             :disabled="isDisabled"
+             :readonly="readonly"
+             :required="required"
+             @blur="_blur"
+             @keydown="_keydown"
+             @keyup="keyup"
+             @mouseenter="over"
+             @mouseleave="out"
+             @change="_change"
+             v-show="editMode"
+             :size="currentInputSize"
+             :style="{'paddingRight': spinners ? '0.5rem !important' : ''}"
+             :inputmode="inputmode"
+      >
+      <input autocomplete="off"
+             :value="inputValue"
+             :name="name"
+             tabindex="0"
+             :disabled="isDisabled"
+             :readonly="readonly || onlySpinners"
+             :required="required"
+             @focus="_focus"
+             @mouseenter="over"
+             @mouseleave="out"
+             v-show="!editMode"
+             ref="formatted"
+             :size="currentInputSize"
+             :style="{'paddingRight': spinners ? '0.5rem !important' : ''}"
+             :placeholder="placeholder"
+      >
+      <input type="hidden"
+             :value="value"
+      >
+    </div>
+    <div v-if="spinners"
+         :class="['bbn-numeric-buttons', 'bbn-radius-top-right', 'bbn-radius-bottom-right', {'bbn-disabled' : !!readonly || isDisabled}]">
+      <div :class="[
+            'bbn-reactive-block',
+            'bbn-middle',
+            'bbn-no-border-top',
+            'bbn-no-border-right',
+            'bbn-radius-top-right',
+            {
+              'bbn-disabled': disableIncrease,
+              'bbn-p': disableIncrease,
+              'bbn-numeric-no-pointer-events' : disableIncrease
+            }
+          ]"
+          @click="increment"
+          unselectable="on"
+          tabindex="-1"
+          :disabled="disableIncrease"
+      >
+        <i class="nf nf-fa-caret_up bbn-middle"></i>
+      </div>
+      <div :class="[
+            'bbn-reactive-block',
+            'bbn-middle',
+            'bbn-no-border-top',
+            'bbn-no-border-bottom',
+            'bbn-no-border-right',
+            'bbn-radius-bottom-right',
+            {
+              'bbn-disabled': disableDecrease,
+              'bbn-p': disableDecrease,
+              'bbn-numeric-no-pointer-events' : disableDecrease
+            }
+          ]"
+          @click="decrement"
+          unselectable="on"
+          tabindex="-1"
+          :disabled="disableDecrease"
+      >
+        <i class="nf nf-fa-caret_down bbn-middle"></i>
+      </div>
+    </div>
+  </div>
+</div>

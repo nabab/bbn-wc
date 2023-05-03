@@ -1,0 +1,88 @@
+.bbn-filter:first-child{
+  border-top: 0 !important;
+  padding: 1rem;
+}
+.bbn-filter{
+  .bbn-form-full{
+    margin: 0 0 0.5rem 0 ;
+  }
+  padding: 0rem 0.4rem;
+  margin: 0.3rem 0;
+  border-left: 2px solid;
+  float: left;
+  clear: right;
+  h3{
+    margin-top: 0;
+  }
+  .bbn-filter-control{
+    border: 0;
+    border-radius: 0;
+    padding-right: 3rem;
+    padding: 0;
+    margin: 0;
+  }
+  .bbn-form-label{
+    width: 2.7rem !important;
+    max-width: 2.7rem;
+    min-width: 2.7rem;
+    margin: 0.3rem;
+  }
+  .bbn-form-label.bbn-filter-block{
+    margin: 3rem 0.3rem 0.3rem;
+  }
+  .bbn-filter-left{
+    width: 5rem;
+  }
+  .bbn-filter-bordered{
+    margin: 0;
+    .bbn-filter-main{
+      margin: 0 1rem;
+    }
+  }
+
+  .bbn-filter-items{
+    position: relative;
+    float: left;
+    clear: right;
+    .bbn-filter-main{
+      float: left;
+      .bbn-filter-form{
+        align-items: center;
+        white-space: nowrap;
+        > div.bbn-block{
+          display: inline-block;
+          min-height: 2rem;
+          line-height: 2rem;
+          vertical-align: middle;
+
+        }
+      }
+    }
+    .bbn-filter-buttons{
+      float: left;
+      clear: left;
+      max-height: 1rem;
+      margin-left:0.5rem;
+    }
+    .bbn-filter-logic{
+      width: 4.5rem;
+      font-weight: bold;
+      float: left;
+    }
+  }
+  .bbn-filter-bordered.bbn-filter-or{
+    border-color: green;
+    > .bbn-filter-logic{
+      color: green;
+    }
+  }
+  .bbn-filter-items::after{
+    content: "";
+    clear: both;
+    display: table;
+  }
+  .bbn-filter-padding{
+    padding-left: 0.1rem;
+    padding-right: 0.1rem;
+  }
+}

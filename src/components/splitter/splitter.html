@@ -1,0 +1,103 @@
+<div :class="[
+       {
+         'bbn-overlay': fullSize,
+         'bbn-w-100': !fullSize && ((panes.lengh <= 1) || !isHorizontal),
+         'bbn-h-100': !fullSize && (panes.lengh <= 1) && isHorizontal,
+         'bbn-splitter-horizontal': isHorizontal,
+         'bbn-splitter-vertical': !isHorizontal,
+         'bbn-grid': true,
+       },
+       componentClass
+     ]"
+     :style="{
+       gridTemplateColumns: columnsCfg,
+       gridTemplateRows: rowsCfg,
+     }"
+     @scroll.prevent.stop="preventScroll"
+     v-show="panes.length">
+  <slot></slot>
+  <div v-for="(rs, i) in resizers"
+       :class="[
+         'bbn-unselectable',
+         'bbn-middle',
+         'bbn-splitter-bar',
+         'bbn-light',
+         'bbn-header',
+         currentOrientation,
+         {'bbn-splitter-resizer': !!rs.pane2},
+         realResizerClass(rs)
+       ]"
+       ref="resizer"
+       :style="{
+          gridColumn: isHorizontal ? rs.position : 1,
+          gridRow: !isHorizontal ? rs.position : 1,
+          minWidth: resizerSize + 'px',
+          minHeight: resizerSize + 'px',
+          maxWidth: isHorizontal ? resizerSize + 'px' : null,
+          maxHeight: isHorizontal ? null : resizerSize + 'px'
+        }"
+       @mousedown.prevent.stop="resizeStart($event, rs)"
+       @touchstart.prevent.stop="resizeStart($event, rs)"
+  >
+    <div v-if="areCollapsible(rs.panec1, rs.panec2)"
+         class="bbn-splitter-collapser"
+         :style="{fontSize: (resizerSize * 1.2) + 'px'}">
+      <div v-if="isCollapsiblePrev(rs.panec1, rs.panec2)"
+           :class="{
+             'bbn-w-100': isHorizontal,
+             'bbn-h-100': !isHorizontal,
+             'bbn-c': true
+           }">
+        <i :class="{
+              'bbn-p': true,
+              'nf nf-fa-angle_left': isHorizontal,
+              'nf nf-fa-angle_up': !isHorizontal
+            }"
+            @click.stop="collapse(rs.panec1, rs.panec2)"
+        ></i>
+      </div>
+      <div v-if="isCollapsibleNext(rs.panec1, rs.panec2)"
+           :class="{
+             'bbn-w-100': isHorizontal,
+             'bbn-h-100': !isHorizontal,
+             'bbn-c': true
+           }">
+        <i :class="{
+             'bbn-p': true,
+             'nf nf-fa-angle_right': isHorizontal,
+             'nf nf-fa-angle_down': !isHorizontal
+           }"
+           @click.stop="collapse(rs.panec2, rs.panec1)"
+        ></i>
+      </div>
+      <div v-if="isFullyCollapsiblePrev(rs.panec1, rs.panec2, i)"
+           :class="{
+             'bbn-w-100': isHorizontal,
+             'bbn-h-100': !isHorizontal,
+             'bbn-c': true
+           }">
+        <i :class="{
+             'bbn-p': true,
+             'nf nf-fa-angle_double_left': isHorizontal,
+             'nf nf-fa-angle_double_up': !isHorizontal
+           }"
+           @click.stop="collapse(rs.panec1, rs.panec2, true)"
+        ></i>
+      </div>
+      <div v-if="isFullyCollapsibleNext(rs.panec1, rs.panec2, i)"
+           :class="{
+             'bbn-w-100': isHorizontal,
+             'bbn-h-100': !isHorizontal,
+             'bbn-c': true
+           }">
+        <i :class="{
+             'bbn-p': true,
+             'nf nf-fa-angle_double_right': isHorizontal,
+             'nf nf-fa-angle_double_down': !isHorizontal
+           }"
+           @click.stop="collapse(rs.panec2, rs.panec1, true)"
+        ></i>
+      </div>
+    </div>
+  </div>
+</div>

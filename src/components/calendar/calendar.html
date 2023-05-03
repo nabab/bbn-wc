@@ -1,0 +1,146 @@
+<div :class="[componentClass, 'bbn-w-100']"
+     v-show="ready"
+>
+  <div v-if="showLoading && isLoading"
+       class="bbn-overlay bbn-middle bbn-xl bbn-white bbn-modal bbn-abs"
+       v-text="_('Loading')"
+       style="z-index: 1"
+  ></div>
+  <div :class="['bbn-widget', 'bbn-flex-height', {'bbn-overlay': type === 'weeks'}]">
+    <div class="bbn-calendar-header bbn-header bbn-xspadded bbn-no-border-left bbn-no-border-right bbn-no-border-top">
+      <component v-if="headerComponent"
+                 :is="headerComponent"
+      ></component>
+      <div v-else
+           class="bbn-flex-width bbn-vmiddle"
+      >
+        <template v-if="arrows && arrowsButtons">
+          <bbn-button v-if="currentCfg.stepSkip"
+                      icon="nf nf-fa-angle_double_left"
+                      @click="prev(true)"
+                      :title="_('Previous') + ' ' + currentCfg.stepSkipText"
+                      :notext="true"
+                      class="bbn-right-xsspace"
+          ></bbn-button>
+          <bbn-button icon="nf nf-fa-angle_left"
+                      @click="prev(false)"
+                      :title="_('Previous') + ' ' + currentCfg.stepText"
+                      :notext="true"
+          ></bbn-button>
+        </template>
+        <template v-else-if="arrows && !arrowsButtons">
+          <i v-if="currentCfg.stepSkip"
+             class="nf nf-fa-angle_double_left bbn-p bbn-hsmargin"
+             @click="prev(true)"
+             :title="_('Previous') + ' ' + currentCfg.stepSkipText"
+          ></i>
+          <i class="nf nf-fa-angle_left bbn-p bbn-hsmargin"
+             @click="prev(false)"
+             :title="_('Previous') + ' ' + currentCfg.stepText"
+          ></i>
+        </template>
+        <div class="bbn-flex-fill bbn-middle bbn-calendar-header-title">
+          <span @click="!!titleAction ? titleAction(_self) : false"
+                :class="{'bbn-p': !!titleAction}"
+          >
+            <i v-if="titleIcon"
+               :class="[titleIcon, 'bbn-hsmargin', 'bbn-large']"></i>
+            <strong v-text="title"></strong>
+          </span>
+        </div>
+        <template v-if="arrows && arrowsButtons">
+          <bbn-button icon="nf nf-fa-angle_right"
+                      @click="next(false)"
+                      :title="_('Next') + ' ' + currentCfg.stepText"
+                      :notext="true"
+          ></bbn-button>
+          <bbn-button v-if="currentCfg.stepSkip"
+                      icon="nf nf-fa-angle_double_right"
+                      @click="next(true)"
+                      :title="_('Next') + ' ' + currentCfg.stepSkipText"
+                      :notext="true"
+                      class="bbn-left-xsspace"
+          ></bbn-button>
+        </template>
+        <template v-else-if="arrows && !arrowsButtons">
+          <i class="nf nf-fa-angle_right bbn-p bbn-hsmargin"
+             @click="next(false)"
+             :title="_('Next') + ' ' + currentCfg.stepText"
+          ></i>
+          <i v-if="currentCfg.stepSkip"
+             class="nf nf-fa-angle_double_right bbn-p bbn-hsmargin"
+             @click="next(true)"
+             :title="_('Next') + ' ' + currentCfg.stepSkipText"
+          ></i>
+        </template>
+      </div>
+    </div>
+    <div class="bbn-flex-fill bbn-spadded"
+         style="display: flex;"
+    >
+      <div class="bbn-calendar-container bbn-w-100"
+           :style="gridStyle"
+      >
+        <div class="bbn-calendar-labels"
+            v-if="labels && currentLabels"
+            v-for="(label, i) in currentLabels"
+            v-html="label"
+            ref="label"
+        ></div>
+        <template v-for="item in items">
+          <div v-if="!item.hidden"
+              :class="['bbn-calendar-item-box', 'bbn-box', {
+                'bbn-p': selection && !item.disabled,
+                'bbn-spadded': !itemDetails && itemPadding,
+                'bbn-tertiary': item.isCurrent && !(selection && (item.value === currentValue)),
+                'bbn-background-effect-tertiary': item.isCurrent && item.inRange && (item.value !== currentValue),
+                'bbn-background-effect-primary': item.inRange && (item.value === currentValue),
+                'bbn-state-hover': selection && item.over && !item.disabled,
+                'bbn-background-effect-hover': selection && item.over && !item.disabled && item.inRange,
+                'bbn-primary': selection && (item.value === currentValue),
+                'bbn-secondary': item.colored && !item.hidden && !item.extra,
+                'bbn-background-effect-secondary': item.colored && !item.hidden && !item.extra && item.inRange && (item.value !== currentValue),
+                'bbn-alt-background-effect': !item.hidden && item.inRange && !item.isCurrent,
+                'bbn-active-background': !item.hidden && item.inRange && !item.isCurrent && (item.value !== currentValue) && !item.colored && (!item.over || (item.over && item.disabled)),
+                'bbn-disabled': item.disabled,
+                'bbn-alt-background': extraItems && item.extra
+              }]"
+              @mouseover="item.over = true"
+              @mouseleave="item.over = false"
+              @click="!item.disabled ? select(item.value) : false"
+              :title="typeof itemTitle === 'function' ? itemTitle(item) : itemTitle"
+          >
+            <div v-if="item.events && item.events.length && itemDetails"
+                class="bbn-flex-height"
+                style="position: relative"
+            >
+              <div :class="['bbn-r', 'bbn-unselectable', 'bbn-calendar-item', {
+                'bbn-secondary-text': item.colored && !item.hidden && !item.extra,
+                'bbn-tertiary-text': item.isCurrent && (!item.inRange || (item.inRange && item.over))
+              }]"
+                  style="margin-right: .2rem"
+              >
+                <span v-text="item.text"></span>
+              </div>
+              <component v-if="itemComponent"
+                        :is="itemComponent"
+                        :source="item"
+                        :selected="currentValue"
+                        class="bbn-flex-fill"
+              ></component>
+            </div>
+            <template v-else>
+              <i v-if="item.events && item.events.length && eventIcon"
+                :class="[eventIcon, 'bbn-unselectable', 'bbn-calendar-item-icon']"
+              ></i>
+              <div :class="['bbn-100', 'bbn-middle', 'bbn-unselectable', 'bbn-calendar-item', {'bbn-tertiary-text': item.colored && !item.extra}]">
+                <span v-text="item.text"></span>
+              </div>
+            </template>
+          </div>
+          <div v-else class="bbn-calendar-item-box bbn-box bbn-o bbn-alt-background"></div>
+        </template>
+      </div>
+    </div>
+  </div>
+</div>

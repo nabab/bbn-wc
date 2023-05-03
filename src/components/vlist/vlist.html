@@ -1,0 +1,55 @@
+<div :class="['bbn-unselectable', componentClass]"
+     :style="getStyles()"
+>
+  <ul :class="'bbn-bbox bbn-no-radius bbn-box k-group k-reset ' + mode + (parent ? ' k-menugroup' : ' k-menu k-menu-vertical k-context-menu')"
+      @mouseleave.stop.prevent="leaveList($event)"
+      tabindex="0"
+      v-if="items"
+      @keydown="pressKey">
+    <li v-for="(li, idx) in items"
+        v-show="!li.hidden"
+        :class="{
+          'k-item': true,
+          'bbn-reactive': true,
+          selected: li.selected ? true : false,
+          disabled: !!li.disabled
+        }"
+        :key="idx"
+        :style="li.items && li.items.length ? 'z-index: auto;' : ''"
+        @mouseenter="over(idx)"
+        @mousedown.stop.prevent="beforeClick"
+        @click.stop.prevent="select(idx)"
+        @mouseup="afterClick">
+      <span class="k-link" v-if="itemComponent">
+        <component :is="itemComponent" :source="li"></component>
+      </span>
+      <span class="k-link" v-else>
+        <span class="space" v-if="(mode === 'selection') || (mode === 'options')">
+          <i v-if="(mode === 'selection') && (li.selected)" class="nf nf-fa-check"></i>
+          <i v-else-if="mode === 'options'" class="nf nf-fa-check"></i>
+        </span>
+        <span class="space" v-if="hasIcons">
+          <i v-if="li.icon" :class="li.icon"></i>
+        </span>
+        <span class="text" v-html="li.text"></span>
+        <span v-if="li.items && li.items.length"
+              class="k-icon k-i-arrow-60-right"
+        ></span>
+      </span>
+      <bbn-vlist v-if="li.items && li.items.length && (idx === currentIndex)"
+                 :level="level + 1"
+                 @closeall="closeAll()"
+                 :source="li.items"
+                 :unique="li.unique"
+                 :no-icon="li.noIcon"
+                 :mode="li.mode"
+                 :left="li.left"
+                 :top="li.top"
+                 :right="li.right"
+                 :bottom="li.bottom"
+                 :max-height="li.maxHeight"
+                 :parent="true"
+      ></bbn-vlist>
+    </li>
+  </ul>
+</div>

@@ -1,0 +1,167 @@
+<div :class="[
+        {
+          'bbn-reset': true,
+          'bbn-bordered': !modal,
+          'bbn-background-internal': !modal,
+          'bbn-invisible': !isResized,
+          'bbn-floater-arrowed': !!arrow
+        },
+        componentClass
+      ]"
+      v-show="isVisible"
+      @resize.stop="onResize"
+      @mouseleave="isOver = false"
+      @mouseenter="isOver = true"
+      @keydown.esc.prevent.stop="close()"
+      @subready.stop
+      :style="currentStyle"
+      v-resizable:container.left.right.bottom="ready && resizable ? $el.parentElement : false">
+  <div v-if="arrow"
+       :class="['bbn-floater-arrow', position]"/>
+  <div :style="containerStyle"
+       class="bbn-flex-height">
+    <div v-if="modal"
+         class="bbn-overlay bbn-modal"/>
+    <header v-if="title"
+            ref="header"
+            :class="{
+              'bbn-header': headerTitle,
+              'bbn-bordered-bottom': true,
+              'bbn-unselectable': true,
+              'bbn-w-100': !isResizing
+            }"
+            v-draggable.mode.helper.container="!!draggable && ready ? {mode: 'move', helper: $el, container: $el.parentElement} : false">
+      <div v-if="title"
+          class="bbn-w-100 bbn-vxspadded">
+        <h3 v-html="title"
+            class="bbn-no-margin bbn-c"
+            :style="{
+              paddingLeft: maximizable || closable ? '3.6rem' : 'var(--space)',
+              paddingRight: maximizable || closable ? '3.6rem' : 'var(--space)',
+            }"
+            ref="title"/>
+      </div>
+      <div class="bbn-top-right bbn-p bbn-lg bbn-h-100">
+        <div v-if="maximizable !== false"
+            class="bbn-h-100 bbn-middle bbn-reactive"
+            @click.stop.prevent="isMaximized = !isMaximized"
+            tabindex="0"
+            :title="_('Full screen')">
+          <i :class="'nf nf-mdi-window_' + (isMaximized ? 'restore' : 'maximize')"/>
+        </div>
+        <div v-if="closable !== false"
+            class="bbn-h-100 bbn-middle bbn-reactive"
+            @click.stop.prevent="close()"
+            tabindex="0"
+            :title="_('Close')">
+          <i class="nf nf-fa-times"/>
+        </div>
+      </div>
+    </header>
+    <div :class="{
+          'bbn-flex-fill': footer || title || (buttons && buttons.length),
+          'bbn-h-100': !title && !footer && (!buttons || !buttons.length),
+          'bbn-w-100': true,
+          'bbn-flex-height': pageable
+        }">
+      <div v-if="pageable && ready">
+        <bbn-pager class="bbn-table-footer bbn-no-border-right bbn-no-border-left bbn-no-border-bottom"
+                  :element="pagerElement || _self"
+                  @click.stop
+                  @mousedown.stop
+                  @mouseup.stop
+                  @keydown.stop
+                  @keyup.stop
+                  :extra-controls="false"/>
+      </div>
+      <div :class="{'bbn-100': !ready || !pageable, 'bbn-flex-fill': pageable}">
+        <bbn-scroll :latency="latency"
+                    ref="scroll"
+                    :class="{'bbn-flex-fill': pageable}"
+                    @ready="scrollReady = true"
+                    :scrollable="scrollable"
+                    :axis="axis"
+                    :max-width="isMaximized ? '100%' : currentMaxWidth || null"
+                    :max-height="isMaximized ? '100%' : scrollMaxHeight || null"
+                    :min-width="currentMinWidth || null"
+                    :min-height="currentMinHeight > outHeight ? currentMinHeight - outHeight : null"
+                    @resizecontent="scrollResize">
+          <slot/>
+          <bbn-anonymous v-if="component"
+                    ref="component"
+                    :is="component"
+                    v-bind="realComponentOptions"/>
+          <div v-else-if="!$slots.default && !!content"
+               v-html="content"
+               :class="scrollable ? 'bbn-block' : 'bbn-overlay'"
+               :style="HTMLStyle"/>
+          <bbn-list v-else-if="!$slots.default && filteredData.length"
+                    :mode="mode"
+                    ref="list"
+                    :suggest="suggest"
+                    :source="filteredData"
+                    :component="itemComponent"
+                    :template="template"
+                    :uid="uid"
+                    :children="children"
+                    :selected="selected"
+                    :class="'bbn-floater-list bbn-menulist ' + mode"
+                    origin="floater"
+                    @select="select"
+                    :source-value="sourceValue"
+                    :source-text="sourceText"
+                    :source-url="sourceUrl"
+                    :source-action="sourceAction"
+                    :groupable="groupable"
+                    :source-group="sourceGroup"
+                    :group-component="groupComponent"
+                    :group-style="groupStyle"/>
+          <h3 v-else v-text="noData"/>
+        </bbn-scroll>
+      </div>
+      <div v-if="pageable && ready">
+        <bbn-pager class="bbn-table-footer bbn-no-border-right bbn-no-border-left bbn-no-border-bottom"
+                  :element="_self"
+                  @click.stop
+                  @mousedown.stop
+                  @mouseup.stop
+                  @keydown.stop
+                  @keyup.stop
+                  :extra-controls="false"/>
+      </div>
+      <bbn-anonymous is="style"
+                v-if="css"
+                scoped="scoped"
+                v-html="css"/>
+    </div>
+    <div v-if="!title && closable">
+      <div :class="{
+        'bbn-top-right': true,
+        'bbn-spadded': true,
+        'bbn-xxxl': !!modal,
+        'bbn-white': !!modal,
+        'bbn-lg': !modal
+      }">
+        <i class="nf nf-fa-times bbn-p"
+           @click="close()"/>
+      </div>
+    </div>
+    <footer v-if="footer"
+            v-html="footer"
+            class="bbn-w-100"
+            ref="footer"/>
+    <footer v-else-if="currentButtons.length"
+            class="bbn-w-100 bbn-button-group"
+            ref="buttons">
+      <bbn-button v-for="(b, i) in currentButtons"
+                  :key="i"
+                  :ref="'button' + i"
+                  @ready="t => focusable = t"
+                  v-bind="b"
+                  :class="['bbn-no-radius', {
+                    'bbn-primary': b.preset === 'submit',
+                    'bbn-no-border-right': !currentButtons[i + 1]
+                  }]"/>
+    </footer>
+  </div>
+</div>

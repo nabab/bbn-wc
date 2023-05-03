@@ -1,0 +1,23 @@
+<div :class="['bbn-flex-height', componentClass]"
+     :style="{
+       width: width,
+       height: height
+     }"
+>
+  <h4 v-if="title"
+      v-html="title"
+      class="bbn-middle"
+  ></h4>
+  <div class="bbn-flex-fill bbn-rel"
+       style="width: 100%"
+  >
+     <div class="bbn-overlay"
+          ref="container"
+     >
+       <div v-if="ready"
+            ref="chart"
+            class="bbn-chart-widget"
+       ></div>
+     </div>
+  </div>
+</div>

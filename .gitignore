@@ -1,0 +1,14 @@
+# Logs
+logs
+*.log
+.history/
+.idea/
+_DS_STORE*
+src/components/old/
+*.DS_Store
+._*
+
+
+[core]
+filemode = false
+*.* text eol=lf

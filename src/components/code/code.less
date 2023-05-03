@@ -1,0 +1,49 @@
+bbn-code {
+  .bbn-floater {
+    font-family: "FiraCode" !important;
+  }
+  position: relative;
+  height: auto;
+  .CodeMirror {
+    padding: 0.5rem 0;
+    font-size: 0.85rem;
+    font-family: "FiraCode";
+    font-feature-settings: "calt" 1;
+    text-rendering: optimizeLegibility;
+    height: fit-content;
+  }
+  .bbn-code-filled {
+    width: 100%;
+    min-height: 100%;
+    .CodeMirror {
+      width: 100%;
+      height: auto;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      position: absolute;
+      overflow: auto;
+      scrollbar-width: none;
+      &::-webkit-scrollbar {
+        display: none;
+      }
+      .CodeMirror-vscrollbar, .CodeMirror-hscrollbar {
+        display: none !important;
+      }
+      .CodeMirror-scroll {
+        margin: 0px;
+        padding: 0px;
+      }
+    }
+  }
+  .theme-button{
+    position: absolute;
+    width: 25px;
+    height: 25px;
+    z-index: 5;
+  }
+  .bbn-scrollbar {
+    z-index: 6;
+  }
+}

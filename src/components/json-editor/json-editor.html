@@ -1,0 +1,21 @@
+<div :class="[{'bbn-100': true, 'bbn-block': true}, componentClass]"
+     @keydown.enter.stop=""
+>
+  <div class="bbn-100 bbn-block"
+       ref="element"
+       @click="click($event)"
+       @focus="focus($event)"
+       @blur="blur($event)"
+       @keydown="keydown($event)"
+       @keyup="keyup($event)"
+  >
+  
+  </div>
+  <input v-model="currentValue"
+         type="hidden"
+         ref="input"
+         :name="name"
+         :disabled="isDisabled"
+         :readonly="readonly"
+  >
+</div>

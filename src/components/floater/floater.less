@@ -1,0 +1,118 @@
+.bbn-floater{
+  position: fixed !important;
+  box-sizing: content-box;
+  overflow: hidden;
+  /** Popup zIndex: 7 */
+  z-index: 100;
+  /*transition: visibility 0s, opacity 0.3s linear;*/
+  &:not(.bbn-invisible) {
+    transition: opacity 0.1s ease-in-out;
+  }
+  &.bbn-invisible {
+    opacity: 0 !important;;
+  }
+  > div {
+    overflow: unset;
+    > header{
+      white-space: nowrap;
+      min-height: 2rem;
+      .bbn-top-right{
+        height: 100%;
+        text-align: right;
+        line-height: 100%;
+        vertical-align: middle;
+        > div{
+          width: 1.8rem;
+          float: left;
+        }
+      }
+      h3 {
+        text-overflow: ellipsis;
+        overflow: hidden;
+      }
+    }
+    > footer.bbn-button-group{
+      min-height: 3rem;
+      button{
+        padding-top: 0.3rem;
+        padding-bottom: 0.3rem;
+      }
+    }
+  }
+  .bbn-floater-arrow {
+    @diagonal: 16px;
+    @size: @diagonal / 1.414;
+    @half: (@diagonal / 2);
+    @halfNegative: (@diagonal / -2);
+    position: absolute;
+    overflow: hidden;
+    &:after {
+      content: '';
+      width: @size;
+      height: @size;
+      position: absolute;
+      background: var(--default-background);
+      transform-origin: 0 0;
+      border: var(--default-border-width) solid var(--default-border);
+    }
+    &.bottomLeft,
+    &.bottom,
+    &.bottomRight,
+    &.topLeft,
+    &.top,
+    &.topRight {
+      width: @diagonal;
+      height: @half;
+      top: @halfNegative;
+      margin-left: @halfNegative;
+      &:after {
+        left: @half;
+        top: 0;
+        transform: rotate(45deg);
+      }
+    }
+    &.bottomLeft,
+    &.bottom {
+      left: 7px;
+    }
+    &.bottomRight,
+    &.topRight {
+      right: -2px;
+    }
+    &.topLeft,
+    &.top,
+    &.topRight {
+      &:after {
+        left: @diagonal;
+        transform: rotate(135deg);
+      }
+    }
+    &.left,
+    &.right {
+      width: @half;
+      height: @diagonal;
+      top: 8px;
+      margin-top: @halfNegative;
+      &:after {
+        left: 0;
+      }
+    }
+    &.left {
+      right: @halfNegative;
+      &:after {
+        top: 0;
+        transform: rotate(45deg);
+      }
+    }
+    &.right {
+      left: @halfNegative;
+      &:after {
+        top: @half;
+        transform: rotate(-45deg);
+      }
+    }
+  }
+  &.bbn-floater-arrowed {
+    overflow: unset;
+  }
+}

@@ -1,0 +1,175 @@
+<div :class="[componentClass, 'bbn-box', 'bbn-spadded']">
+    <div v-if="ready && showList"
+         style="z-index: 2">
+      <div v-for="(f, idx) in currentData"
+           :class="['bbn-flex-width', 'bbn-bordered', 'bbn-spadded', 'bbn-vmiddle', {
+             'bbn-alt-background': (f.status !== 'progress') && (f.status !== 'error'),
+             'bbn-background-tertiary': f.status === 'progress',
+             'bbn-bg-red': f.status === 'error',
+             'bbn-bottom-sspace': currentData[idx+1],
+             'bbn-alt-dark': !!(idx % 2),
+             'bbn-primary-text-alt': f.status === 'ready'
+           }]"
+      >
+        <div v-if="icons">
+          <i :class="['bbn-large', getFileIcon(f)]"/>
+        </div>
+        <div v-else-if="thumbs"
+             class="bbn-upload-thumb bbn-block">
+          <template v-if="isFile(f)">
+            <img v-if="f.data.type.startsWith('image/')"
+                 :src="getThumbURL(f)">
+            <video v-else-if="f.data.type.startsWith('video/')"
+                   muted>
+              <source :src="getThumbURL(f)"
+                      :type="f.data.type">
+              <div class="bbn-middle">
+                <i :class="['bbn-large', getFileIcon(f)]"/>
+              </div>
+            </video>
+            <object v-else-if="f.data.type === 'application/pdf'"
+                    :data="getThumbURL(f)"/>
+            <div v-else
+                 class="bbn-middle">
+              <i :class="['bbn-large', getFileIcon(f)]"/>
+            </div>
+          </template>
+          <img v-else-if="getThumbURL(f)"
+               :src="getThumbURL(f)">
+          <div v-else
+               class="bbn-middle">
+            <i :class="['bbn-large', getFileIcon(f)]"/>
+          </div>
+          <div class="bbn-overlay" style="opacity: 0;"/>
+        </div>
+        <div class="bbn-flex-fill bbn-hmargin">
+          <div v-if="f.edit === false"
+               :class="{
+                 'bbn-abs': f.status === 'progress',
+                 'bbn-h-100': f.status === 'progress',
+                 'bbn-vmiddle': f.status === 'progress'
+               }"
+               :style="{'z-index': f.status === 'progress' ? 2 : 0}"
+          >
+            <span v-text="f.data.name"></span>
+            <span v-if="showFilesize"
+                  class="bbn-left-sspace bbn-i bbn-s"
+            >({{getFileSize(f)}})</span>
+          </div>
+          <bbn-input v-else-if="f.status !== 'progress'"
+                     v-model="f.edit"
+                     class="bbn-w-100"
+                     :placeholder="currentText.filename"
+                     ref="filenameInput"
+          ></bbn-input>
+          <bbn-progressbar v-if="(f.edit === false) && (f.status === 'progress')"
+                           :value="f.progress"
+                           :show-value="true"
+                           type="percent"
+                           class="bbn-no-border"
+                           style="text-align: right"
+                           bar-class="bbn-background-tertiary"
+          ></bbn-progressbar>
+        </div>
+        <div>
+          <div v-if="isEnabled && (f.edit === false)">
+            <i v-if="(f.status === 'success') && !!downloadable && !!downloadUrl && !uploading"
+              class="bbn-large nf nf-fa-download bbn-p bbn-right-sspace"
+              @click="download(f)"
+              :title="currentText.download"
+            ></i>
+            <i v-if="(f.status === 'success') && editable && !uploading"
+              class="bbn-large nf nf-fa-edit bbn-p bbn-right-sspace"
+              @click="edit(f)"
+              :title="currentText.editFilename"
+            ></i>
+            <i v-if="f.status === 'error'"
+              class="bbn-large nf nf-fa-repeat bbn-p bbn-right-sspace"
+              @click="retry(f)"
+              :title="currentText.retry"
+            ></i>
+            <i v-if="eliminable && (f.status !== 'progress') && !uploading"
+              class="bbn-large nf nf-fa-trash bbn-p"
+              @click="remove(f)"
+              :title="currentText.remove"
+            ></i>
+            <bbn-loadicon v-if="f.status === 'progress'"></bbn-loadicon>
+          </div>
+          <div v-else-if="isEnabled && (f.edit !== false) && !uploading">
+            <i class="bbn-large nf nf-fa-check bbn-p bbn-right-sspace"
+               @click="saveEdit(f)"
+               :title="currentText.save"
+            ></i>
+            <i class="bbn-large nf nf-fa-close bbn-p"
+               @click="cancelEdit(f)"
+               :title="currentText.cancel"
+            ></i>
+          </div>
+          <div v-else-if="(f.status === 'success') && !!downloadable && !!downloadUrl && !uploading">
+            <i class="bbn-large nf nf-fa-download bbn-p"
+               @click="download(f)"
+               :title="currentText.download"
+            ></i>
+          </div>
+        </div>
+      </div>
+      <div v-if="!currentData.length && !isEnabled"
+           class="bbn-c"
+           v-text="currentText.empty"
+      ></div>
+    </div>
+    <div v-if="isEnabled"
+         class="bbn-rel"
+         :style="{
+           'padding-top': !!currentData.length && canAddFile ? '.5rem' : '0',
+           'z-index': 2
+         }"
+    >
+      <div class="bbn-flex-width bbn-vmiddle">
+        <i v-if="canAddFile"
+           :class="[icon, 'bbn-primary-text-alt', 'bbn-xlarge']"
+        ></i>
+        <div v-if="canAddFile"
+             class="bbn-flex-fill bbn-primary-text-alt bbn-hsmargin"
+             @click="getRef('fileInput').click()"
+             v-text="dragDrop ? currentText.uploadOrDrop : currentText.uploadButton"
+             @drop="dropEvent"
+        ></div>
+        <div class="bbn-box bbn-spadded"
+             ref="pasteContainer"
+             v-if="paste && canAddFile"
+             style="z-index: 2"
+             :title="currentText.pasteContainer"
+             @paste="pasteEvent"
+        >
+          <i class="nf nf-fa-paste bbn-large"></i>
+        </div>
+        <div class="bbn-box bbn-spadded bbn-p"
+             ref="uploadButton"
+             v-if="canAddFile && !autoUpload && !!filesReady.length"
+             style="z-index: 2"
+             :title="currentText.upload"
+             @click="upload()"
+        >
+          <i class="nf nf-fa-upload bbn-large"></i>
+        </div>
+        <input title=""
+               :disabled="!!isDisabled || !canAddFile"
+               ref="fileInput"
+               type="file"
+               :multiple="multiple"
+               :accept="accept"
+               @change="filesChanged"
+               class="bbn-invisible bbn-abs bbn-top-left bbn-bottom-right bbn-100"
+               style="z-index: 1"
+               @drop="dropEvent"
+        >
+        <input type="hidden"
+               :value="value"
+               :readonly="readonly"
+               :required="required"
+               ref="element"
+        >
+      </div>
+    </div>
+</div>

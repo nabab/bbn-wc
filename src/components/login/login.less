@@ -1,0 +1,43 @@
+.bbn-login {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	opacity: 0;
+	height: 100%;
+	overflow: auto;
+	div.bbn-login-container {
+		min-width: 25rem;
+		display: flex;
+		justify-content: space-between;
+		flex-direction: column;
+		max-width: 90%;
+		.bbn-input {
+			input {
+				text-align: center;
+			}
+		}
+		div.bbn-login-logo {
+			img {
+				transform: scale(0.9);
+				max-width: 500px;
+				height: auto;
+				.bbn-screen-small & {
+					max-width: 90%;
+				}
+				.bbn-screen-small.bbn-tablet & {
+					max-width: 80%;
+				}
+			}
+		}
+		form{
+			.bbn-button:not(.bbn-input .bbn-button){
+				width: 40%;
+			}
+		}
+		.bbn-screen-small & {
+			.bbn-input {
+				width: 90%;
+			}
+		}
+	}
+}

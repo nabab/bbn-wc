@@ -1,0 +1,29 @@
+<div :class="['bbn-abs', 'bbn-bordered', 'bbn-background', componentClass, {
+  'bbn-no-hborder': !isVertical,
+  'bbn-no-vborder': isVertical,
+  'bbn-w-100': !isVertical,
+  'bbn-h-100': isVertical,
+}]"
+     @mouseup.stop
+     @mousedown.stop
+     @keydown.escape="hide"
+     :style="currentStyle"
+>
+  <slot></slot>
+  <div v-if="closeButton"
+       :class="{
+         'bbn-abs': true,
+         'bbn-top-right': (closeButton !== 'bottom-right') && (closeButton !== 'bottom-left') && (closeButton !== 'top-left'),
+         'bbn-bottom-right': closeButton === 'bottom-right',
+         'bbn-top-left': closeButton === 'top-left',
+         'bbn-bottom-left': closeButton === 'bottom-left',
+         'bbn-p': true,
+         'bbn-spadded': true,
+         'bbn-m': !isMobile,
+         'bbn-xxl': isMobile,
+         'bbn-unselectable': true
+       }"
+       @click.stop.prevent="hide">
+    <i class="nf nf-fa-times"></i>
+  </div>
+</div>

@@ -1,0 +1,35 @@
+/* LESS Document */
+.bbn-dashboard{
+  &.bbn-unselectable{
+    cursor: move;
+  }
+  .bbn-masonry{
+    overflow: hidden;
+    > div.bbn-widget,
+    #bbn-draggable-current > .bbn-widget{
+      display: grid;
+      margin-bottom: 1rem;
+      width: 100%;
+      page-break-inside: avoid;
+      &.full{
+        -webkit-column-span: all;
+        -moz-column-span: all;
+        column-span: all;
+      }
+      // Safari
+      &.bbn-basic-component{
+        .bbn-flex-fill, .bbn-line-breaker, .bbn-w-100, .bbn-block, .bbn-widget-content {
+          position: static;
+        }
+      }
+    }
+  }
+  .bbn-dashboard-sortable {
+    div.bbn-widget .bbn-header .ui-sortable-handle{
+      cursor: move;
+    }
+    .bbn-widget-placeholder{
+      min-height: 200px;
+    }
+  }
+}

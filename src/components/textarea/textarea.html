@@ -1,0 +1,33 @@
+<div :class="[
+        'bbn-textbox',
+        componentClass,
+        {'bbn-state-disabled': !!isDisabled}
+      ]">
+  <textarea :class="{
+              'bbn-no-border': true,
+              'bbn-radius': true,
+              'bbn-w-100': !cols,
+              'bbn-spadded': true,
+              'bbn-state-disabled': !!isDisabled
+            }"
+            :value="value"
+            :name="name"
+            ref="element"
+            @input="onInput"
+            @click="click($event)"
+            @focus="focus($event)"
+            @blur="blur($event)"
+            @change="change($event)"
+            @keydown="textareaKeydown($event)"
+            @keydown.enter.stop
+            @keyup="keyup($event)"
+            @paste="$emit('paste', $event)"
+            :disabled="isDisabled"
+            :readonly="readonly"
+            :required="required"
+            :placeholder="placeholder"
+            :maxlength="maxlength"
+            :rows="currentRows"
+            :cols="cols"
+            :style="{resize: !resizable ? 'none' : ''}"/>
+</div>

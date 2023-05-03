@@ -1,0 +1,43 @@
+.bbn-datepicker {
+  display: inline-flex;
+  flex-wrap: nowrap;
+  flex-direction: row;
+  .bbn-masked {
+    border: none;
+  }
+  .bbn-button {
+    margin-top: 0;
+    &.bbn-button-right,
+    &.bbn-button-left {
+      //width: inherit;
+      opacity: 0.7;
+    }
+  }
+  .bbn-calendar {
+    height: auto;
+    max-height: 16rem;
+    max-width: 40rem;
+    .bbn-widget:first-child {
+      border: 0;
+    }
+  }
+  &.bbn-input-nullable{
+    .bbn-input-nullable-container{
+      opacity: 0;
+      transition: opacity 0.2s;
+      line-height: 100%;
+      margin: auto;
+      padding-right: 0.2rem;
+      .nf-fa-times_circle{
+        line-height: 100%;
+        margin: auto;
+      }
+      width: 1.05rem;
+    }
+    &:hover{
+      .bbn-input-nullable-container{
+        opacity: 0.3;
+      }
+    }
+  }
+}

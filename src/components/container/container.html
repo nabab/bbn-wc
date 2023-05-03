@@ -1,0 +1,209 @@
+<div :class="[componentClass, {
+  'bbn-container-ratio': router?.visualShowAll,
+  'bbn-overlay': !visual && router?.scrollContent,
+  'bbn-w-100': !router?.scrollContent && !router?.visualShowAll
+}]"
+     @subready.stop
+     :style="visual ? visualStyle : {}"
+     v-show="(!router?.isVisual && isVisible) || isVisualVisible || isPane">
+  <div :class="{
+    'bbn-overlay': true,
+    'bbn-container-full-screen': fullScreen,
+  }"
+       bbn-forget="!router?.scrollContent">
+    <transition name="fade"
+                @enter="enter"
+                @after-enter="onResize">
+      <div :class="{
+        'bbn-overlay': (isPane || !router?.isVisual) && router?.scrollContent,
+        'bbn-flex-height': (!isPane && (router?.isVisual || fullScreen)) && router?.scrollContent,
+        'bbn-w-100': visual || !router?.scrollContent
+      }"
+          bbn-show="isVisible || router?.isVisual">
+        <!-- The header -->
+        <div bbn-if="!isPane && (visual || fullScreen)"
+            :class="'bbn-transition-bcolor bbn-b bbn-spadded bbn-flex-width ' + (isVisible ? ' bbn-m' : '')"
+            :style="{
+              fontSize: isVisible && !router?.visualShowAll ? null : '10rem',
+              backgroundColor: bcolor || router?.bcolor,
+              color: fcolor || router?.fcolor
+            }">
+          <div class="bbn-flex-fill bbn-vmiddle">
+            <bbn-context bbn-if="isVisible"
+                        class="bbn-right-sspace bbn-lg bbn-p"
+                        :floater-title="_('Container menu')"
+                        tag="span"
+                        :source="showMenu">
+              <i class="nf nf-fa-bars"/>
+            </bbn-context>
+            <span bbn-if="icon"
+                  class="bbn-right-sspace bbn-lg">
+              <i :class="icon"/>
+            </span>
+            <span bbn-text="title"
+                  style="overflow: hidden"/>
+          </div>
+          <!-- Icon for restoring size when in full screen mode -->
+          <div bbn-if="isVisible && fullScreen"
+              class="bbn-block bbn-p bbn-vmiddle bbn-h-100"
+              @click="fullScreen = false">
+            <i class="nf nf-mdi-arrow_collapse bbn-lg"/>
+          </div>
+          <!-- Icon for closing  -->
+          <div bbn-elseif="isVisible && !isPane && !static && !pinned && !router?.visualShowAll"
+              class="bbn-block bbn-p bbn-vmiddle bbn-h-100"
+              @click="close">
+            <i class="nf nf-fa-times bbn-lg"/>
+          </div>
+        </div>
+        <!-- The main container (the one we take screenshots of) -->
+        <div :class="{
+          'bbn-background': true,
+          'bbn-overlay': !fullScreen && !router?.isVisual && !isPane && router?.scrollContent,
+          'bbn-flex-fill': (fullScreen || (router?.isVisual && !isPane)) && router?.scrollContent,
+          'bbn-w-100': !router?.scrollContent,
+          'bbn-container-visible': isVisible
+        }"
+            ref="canvasSource">
+          <!-- The container's popup, from which each floater will come -->
+          <bbn-popup ref="popup"
+                    :source="popups"
+                    bbn-if="ready"
+                    bbn-show="!hidden && isLoaded && (isVisible || cached) && popups.length"/>
+          <!-- This is shown when it's ready -->
+          <bbn-scroll bbn-if="ready && isLoaded && (isVisible || ((real || cached) && ready) || router?.isVisual)"
+                      bbn-show="!router?.isVisual || (router?.isVisual && !thumbnail)"
+                      ref="scroll"
+                      @ready="init"
+                      :scrollable="scrollable && router?.scrollContent"
+                      axis="y"
+                      :class="{
+                        'bbn-overlay': router?.scrollContent,
+                        'bbn-w-100': !router?.scrollContent
+                      }">
+            <!-- This is an ad hoc component with unique name -->
+            <component bbn-if="isComponent && componentDefinition"
+                      :is="componentDefinition"
+                      :source="currentSource"
+                      ref="component"/>
+            <!-- This is a classic component -->
+            <component bbn-elseif="currentComponent"
+                      :is="currentComponent"
+                      :source="currentSource"
+                      ref="component"
+                      bbn-bind="currentOptions"/>
+            <!-- This is just HTML content -->
+            <div bbn-elseif="!isComponent && currentContent"
+                 bbn-html="currentContent">
+            </div>
+            <!-- This is the slot -->
+            <slot bbn-else></slot>
+            <!-- Adding style as a component -->
+            <component is="style"
+                      bbn-if="currentCss"
+                      scoped="scoped"
+                      bbn-html="currentCss"/>
+          </bbn-scroll>
+          <!-- If loading showing loader -->
+          <div bbn-elseif="isVisible && errorStatus"
+               class="bbn-overlay bbn-middle bbn-lg">
+            <div class="bbn-lpadded bbn-state-error bbn-block bbn-nowrap">
+              <h1 bbn-text="errorStatus.status"/>
+              <div bbn-text="url"/>
+              <div class="bbn-vlpadded bbn-b"
+                   bbn-text="errorStatus.statusText"/>
+              <div class="bbn-c">
+                <bbn-button @click="close"
+                            icon="nf nf-fa-times"
+                            :text="_('Close')"
+                            class="bbn-state-error"/>
+              </div>
+            </div>
+          </div>
+          <!-- If loading showing loader -->
+          <bbn-loader bbn-elseif="isVisible && (!ready || !isLoaded)"/>
+          <!-- Thumbnail image -->
+          <div bbn-if="!isVisible && visual && thumbnail"
+              style="overflow: hidden"
+              class="bbn-overlay">
+            <img :src="thumbnail"
+                 style="width: 100%; max-height: 100%; height: auto">
+          </div>
+        </div>
+      </div>
+    </transition>
+    <!-- When in visual mode a layer prevents interaction with the content -->
+    <div bbn-if="router?.isVisual && (!isVisible || router?.visualShowAll) && !isPane"
+        class="bbn-overlay"
+        style="z-index: 12; background-color: black; opacity: 0.2;">
+    </div>
+    <!-- When in visual mode this is the interaction layer -->
+    <div bbn-if="router?.isVisual && (!isVisible || router?.visualShowAll)"
+        class="bbn-overlay"
+        @click="router?.activateIndex(currentIndex)"
+        @mouseenter="isOver = true"
+        @mouseleave="isOver = false"
+        style="z-index: 12">
+      <transition name="fade">
+        <div class="bbn-bottom-left bbn-w-100"
+            bbn-show="isOver"
+            :style="{
+                fontSize: isVisible && !router?.visualShowAll ? null : '10rem'
+              }">
+          <!-- Semi-transparent dark layer these buttons are not used -->
+          <div class="bbn-bottom-left bbn-w-100 bbn-bg-black"
+               style="opacity: 0.6; color: transparent">
+            <div class="bbn-w-50 bbn-spadded">
+              <!--span class="bbn-spadded bbn-p">
+                <i class="nf nf-fa-bars"/>
+              </span-->
+            </div>
+            <div class="bbn-w-50 bbn-right bbn-spadded">
+              <span class="bbn-spadded bbn-p"
+                    bbn-if="!pinned && !static">
+                <i class="nf nf-fa-times"/>
+              </span>
+              <span class="bbn-spadded bbn-p"
+                    bbn-elseif="pinned">
+                <i class="nf nf-mdi-pin"/>
+              </span>
+              <span class="bbn-spadded bbn-p">
+                <i class="nf nf-oct-pin"/>
+              </span>
+            </div>
+          </div>
+          <!-- These buttons are the real ones (white) -->
+          <div class="bbn-bottom-left bbn-w-100 bbn-white">
+            <div class="bbn-w-50 bbn-spadded">
+              &nbsp;
+              <!--bbn-context class="bbn-spadded bbn-iblock bbn-p"
+                           tag="span"
+                           :source="showMenu">
+                <i class="nf nf-fa-bars"
+                   @click.stop="pin"/>
+              </bbn-context-->
+            </div>
+            <div class="bbn-w-50 bbn-right bbn-spadded">
+              <span bbn-if="!pinned && !static"
+                    @click.stop="pin"
+                    class="bbn-spadded bbn-p">
+                <i class="nf nf-oct-pin"/>
+              </span>
+              <span class="bbn-spadded bbn-p"
+                    @click.stop="close"
+                    bbn-if="!pinned && !static">
+                <i class="nf nf-fa-times"/>
+              </span>
+              <span class="bbn-spadded bbn-p"
+                    @click.stop="unpin"
+                    bbn-elseif="pinned && !static">
+                <i class="nf nf-mdi-pin_off"/>
+              </span>
+              &nbsp;
+            </div>
+          </div>
+        </div>
+      </transition>
+    </div>
+  </div>
+</div>

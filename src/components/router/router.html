@@ -1,0 +1,242 @@
+<div :class="[componentClass, {
+             'bbn-invisible': !ready,
+             'bbn-overlay': (nav || scrollContent),
+             'bbn-w-100': !scrollContent
+             }]">
+  <bbn-splitter :resizable="resizable"
+                :collapsible="collapsible"
+                :full-size="scrollContent"
+                bbn-forget="!splittable"
+                ref="topSplitter">
+    <bbn-pane :scrollable="false"
+              bbn-forget="!splittable">
+      <div :class="{
+                  'bbn-overlay': scrollContent,
+                  'bbn-flex-height': scrollContent && !hasVerticalTabs,
+                  'bbn-flex-width': hasVerticalTabs,
+                  'bbn-router-nav': nav,
+                  'bbn-router-nav-bc': nav && isBreadcrumb,
+                  'bbn-router-nav-verticaltabs': hasVerticalTabs,
+                  'bbn-w-100': !scrollContent
+                  }">
+        <!-- START OF BREADCRUMB -->
+        <div v-if="nav && isBreadcrumb && !isVisual"
+            ref="breadcrumb"
+            :class="['bbn-router-breadcrumb', {'bbn-router-breadcrumb-master': master}]">
+          <div v-if="isBreadcrumbMaster"
+              class="bbn-router-breadcrumb-container">
+            <div class="bbn-transition-bcolor bbn-h-100 bbn-alt bbn-bordered-bottom bbn-no-border-top bbn-no-border-right bbn-vmiddle"
+                :style="{
+                        backgroundColor: getBackgroundColor(selected),
+                        color: getFontColor(selected)
+                        }">
+              <div class="bbn-flex-width bbn-h-100 bbn-vmiddle">
+                <template v-if="breadcrumbs.length"
+                          v-for="(bc, i) in breadcrumbs">
+                  <div v-if="i > 0">
+                    <i class="nf nf-fa-angle_right bbn-hsmargin bbn-router-breadcrumb-arrow"/>
+                  </div>
+                  <bbn-context :source="bc.getList(i)"
+                              tag="div"
+                              min-width="10rem"
+                              tabindex="0"
+                              :item-component="$options.components.listItem"
+                              :class="['bbn-h-100', 'bbn-vmiddle', {
+                                'bbn-flex-fill': i === breadcrumbs.length - 1
+                              }]"
+                              :attach="itsMaster ? (itsMaster.getRef('breadcrumb') || undefined) : undefined"
+                              :autobind="false"
+                              :style="{
+                                      backgroundColor: bc.getBackgroundColor(bc.selected),
+                                      color: bc.getFontColor(bc.selected)
+                                      }">
+                    <bbn-context :source="bc.getMenuFn"
+                                :source-index="isNumber(bc.selected) ? bc.selected : undefined"
+                                tag="div"
+                                min-width="10rem"
+                                tabindex="0"
+                                :context="true"
+                                :autobind="false"
+                                class="bbn-vmiddle bbn-h-100">
+                      <div class="bbn-vmiddle bbn-h-100">
+                        <div class="bbn-router-breadcrumb-badge-container bbn-middle"
+                            v-if="isNumber(bc.selected) && bc.views[bc.selected] && numProperties(bc.views[bc.selected].events)">
+                          <span class="bbn-badge bbn-small bbn-bg-red"
+                                v-text="numProperties(bc.views[bc.selected].events)"/>
+                        </div>
+                        <div class="bbn-router-breadcrumb-loader bbn-border-text"
+                            :style="{borderColor: isNumber(bc.selected) && bc.views[bc.selected] && bc.views[bc.selected].fcolor ? bc.views[bc.selected].fcolor : null}"
+                            v-show="isNumber(bc.selected) && bc.views[bc.selected] && bc.views[bc.selected].loading"/>
+                        <div :class="[
+                                    'bbn-router-breadcrumb-element',
+                                    'bbn-h-100',
+                                    'bbn-vmiddle',
+                                    {
+                                    'bbn-router-breadcrumb-dirty': isNumber(bc.selected)
+                                    && bc.views[bc.selected]
+                                    && !!bc.views[bc.selected].dirty
+                                    }
+                                    ]">
+                          <span v-if="isNumber(bc.selected) && bc.views[bc.selected] && bc.views[bc.selected].icon"
+                                :title="bc.views[bc.selected].title"
+                                :class="'bbn-router-breadcrumb-element-icon bbn-h-100 bbn-vmiddle bbn-right-xsspace' + (bc.views[bc.selected].notext ? ' bbn-lg' : ' bbn-m')">
+                            <i :class="bc.views[bc.selected].icon"/>
+                          </span>
+                          <span v-if="isNumber(bc.selected) && bc.views[bc.selected] && !bc.views[bc.selected].notext"
+                                :class="['bbn-router-breadcrumb-element-text', {'bbn-b': !breadcrumbs[i+1]}]"
+                                :title="bc.views[bc.selected].title && (bc.views[bc.selected].title.length > bc.maxTitleLength) ? bc.views[bc.selected].title : ''"
+                                v-html="bc.views[bc.selected].title ? bc.cutTitle(bc.views[bc.selected].title) : _('Untitled')"/>
+                        </div>
+                        <span v-if="isNumber(bc.selected)
+                                && bc.views[bc.selected]
+                                && !bc.views[bc.selected].static
+                                && !bc.views[bc.selected].pinned"
+                          class="bbn-p bbn-iblock bbn-top-right bbn-hxspadded bbn-xs"
+                          @mousedown.prevent.stop="bc.close(bc.selected)"
+                          @mouseup.prevent.stop>
+                          <i class="nf nf-fa-times"/>
+                        </span>
+                        <bbn-context v-if="isNumber(bc.selected) && bc.views[bc.selected] && bc.views[bc.selected].menu"
+                                    :source="() => bc.getMenuFn(bc.selected)"
+                                    tag="span"
+                                    class="bbn-p bbn-iblock bbn-bottom-right bbn-hxspadded bbn-xs">
+                          <i class="nf nf-fa-caret_down"/>
+                        </bbn-context>
+
+                      </div>
+                    </bbn-context>
+                  </bbn-context>
+                </template>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- END OF BREADCRUMB -->
+        <!-- START OF LEFT|TOP TABS -->
+        <bbn-tabs v-else-if="nav && !isBreadcrumb && !isVisual && !['right', 'bottom'].includes(orientation)"
+                  ref="tabs"
+                  v-model="selectedTab"
+                  @close="closeTab"
+                  :scrollable="scrollable"
+                  :max-title-length="maxTitleLength"
+                  :source="tabsList"
+                  :position="orientation === 'auto' ? undefined : orientation"/>
+        <!-- END OF LEFT|TOP TABS -->
+        <!-- START OF CONTENT -->
+        <bbn-scroll v-if="ready"
+            :class="{
+                    'bbn-router-scroller': isVisual,
+                    'bbn-flex-fill': scrollContent,
+                    }"
+            :scrollable="visualShowAll"
+            :style="{
+              overflow: 'auto',
+              height: visualShowAll ? '100%' : 'auto'
+            }"
+            bbn-forget="!scrollContent">
+          <div :class="{
+                      'bbn-overlay': scrollContent && !visualShowAll,
+                      'bbn-w-100': isVisual && !scrollContent || visualShowAll,
+                      'bbn-router-visual': isVisual
+                    }"
+              :style="isVisual ? visualStyle : {}"
+              v-if="ready"
+              ref="visualRouter"
+              @keydown.esc="onEscape"
+              :tabindex="isVisual && visualShowAll ? 0 : -1">
+            <div v-if="isVisual && (selected !== null) && (views.length > numVisuals)"
+                :class="'bbn-bg-black bbn-white bbn-p' + (visualShowAll ? '  bbn-container-ratio' : '')"
+                @click="visualShowAll = !visualShowAll">
+              <div class="bbn-100 bbn-middle">
+                <div class="bbn-block bbn-xxxl">
+                  <i :class="'nf nf-fa-' + (visualShowAll ? 'minus' : 'plus')"/>
+                </div>
+              </div>
+            </div>
+            <template v-for="a in (isVisual ? visualList : views)"
+                      :key="isVisual ? a.view.uid : a.uid">
+              <bbn-portal :disabled="!routed || !getPane(a)"
+                          bbn-forget="!splittable"
+                          :selector="getPortalSelector(a)">
+                <div v-if="isVisual ? a.view.real : a.real"
+                     class="bbn-router-container-fake"
+                     :ref="'ct-' + (isVisual ? a.view.url : a.url)"/>
+                <bbn-container v-else-if="!component && (!a.pane || routed)"
+                              :visual="isVisual"
+                              v-bind="isVisual ? a.view : a"/>
+                <bbn-container v-else-if="component"
+                              :source="componentSource"
+                              :visual="isVisual"
+                              :component="component"
+                              :url="a.view?.url || a.url || componentSource[componentUrl]"/>
+              </bbn-portal>
+            </template>
+          </div>
+        </bbn-scroll>
+        <!-- END OF CONTENT -->
+        <!-- START OF RIGHT|BOTTOM TABS -->
+        <bbn-tabs v-if="nav && !isBreadcrumb && !isVisual && ['right', 'bottom'].includes(orientation)"
+                  ref="tabs"
+                  v-model="selectedTab"
+                  @close="closeTab"
+                  :scrollable="scrollable"
+                  :max-title-length="maxTitleLength"
+                  :source="tabsList"
+                  :position="orientation"/>
+        <!-- END OF RIGHT|BOTTOM TABS -->
+      </div>
+    </bbn-pane>
+    <!-- START FOR SPLITTABLE MODE -->
+    <bbn-pane v-if="!single && splittable && currentPanes.length && ready"
+              :scrollable="false"
+              size="30%">
+      <bbn-splitter :resizable="resizable"
+                    :collapsible="collapsible"
+                    @resize="splitterMounted = true"
+                    ref="splitter">
+        <bbn-pane v-for="(pane, i) in currentPanes"
+                  :key="i"
+                  :ref="'pane' + pane.id"
+                  :title="pane.tabs[pane.selected] ? pane.tabs[pane.selected].title : null"
+                  :size="i ? Math.floor(100/currentPanes.length) + '%' : null"
+                  :scrollable="false">
+          <div class="bbn-overlay bbn-flex-height bbn-router-nav">
+            <!-- PANE TABS -->
+            <bbn-tabs :scrollable="true"
+                      :source="pane.tabs"
+                      :closable="false"
+                      v-model="pane.selected"
+                      v-if="routed"
+                      @input="selectPaneTab(pane)"
+                      :limit="5"/>
+            <!-- PANE CONTENT -->
+            <div class="bbn-flex-fill">
+              <div v-for="(tab, tabIndex) in pane.tabs"
+                   class="bbn-overlay"
+                   v-show="pane.selected === tabIndex"
+                   :id="pane.id + slashToHyphen(tab.url)"/>
+            </div>
+          </div>
+        </bbn-pane>
+      </bbn-splitter>
+
+    </bbn-pane>
+  </bbn-splitter>
+  <bbn-floater v-if="!single && showRouterCfg"
+               :modal="true"
+               :title="false"
+               width="100%"
+               :closable="false"
+               ref="cfgwindow"
+               height="100%">
+    <div class="bbn-overlay bbn-middle"
+         @click="showRouterCfg = false">
+      <div class="bbn-block bbn-background"
+           @click.stop>
+        <bbn-router-config :router="this"
+                           :visual="!parent"/>
+      </div>
+    </div>
+  </bbn-floater>
+  <bbn-loader v-if="!ready"/>
+</div>

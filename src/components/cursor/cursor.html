@@ -1,0 +1,14 @@
+<div :class="[componentClass, 'bbn-w-100']">
+  <label v-text="label"
+         class="bbn-cursor-label bbn-nowrap"/>
+  <input :focused="true"
+          v-bind:value="parseInt(value)"
+          placeholder="Type your text here!"
+          v-on:input="$emit('input', $event.target.value + unit)"
+          type="range"
+          :min="min" 
+          :max="max" 
+          class="slider"
+          :step="step"
+  >
+</div>

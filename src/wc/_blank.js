@@ -1,0 +1,4 @@
+(() => {
+  bbn.fn.autoExtend('wc', {
+  })
+})();

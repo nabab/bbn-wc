@@ -1,0 +1,518 @@
+<div :class="[{'bbn-overlay': scrollable, 'bbn-block': !scrollable}, componentClass, 'bbn-bordered']">
+  <div :class="{'bbn-overlay': scrollable, 'bbn-flex-height': scrollable, 'bbn-block': !scrollable}"
+       :style="scrollable && groupCols.length ? {} : {
+         width: totalWidth
+       }"
+       v-if="cols.length">
+    <div v-if="hasToolbar"
+         class="bbn-table-toolbar bbn-w-100"
+         ref="toolbar">
+      <bbn-toolbar v-if="toolbarButtons.length || search"
+                   :source="toolbarButtons"
+                   :slot-before="toolbarSlotBefore">
+        <slot name="toolbar"></slot>
+        <template v-slot:right>
+          <div v-if="search"
+               class="bbn-hsmargin">
+            <bbn-input :nullable="true"
+                       button-right="nf nf-fa-search"
+                       class="bbn-wide"
+                       v-model="searchValue"/>
+           </div>
+        </template>
+      </bbn-toolbar>
+      <div v-else-if="typeof toolbar === 'function'"
+           v-html="toolbar()"/>
+      <bbn-anonymous v-else
+                 :is="toolbar"/>
+    </div>
+    <div :class="['bbn-w-100', 'bbn-table-container', {'bbn-flex-fill': scrollable}]">
+      <div v-if="initStarted || isResizing"
+           class="bbn-overlay bbn-middle bbn-background"
+           style="z-index: 5">
+        <bbn-loadicon class="bbn-vmiddle"
+                      :size="24"/>
+        <span class="bbn-xl bbn-b bbn-left-sspace"
+              v-text="_('Loading') + '...'"/>
+      </div>
+      <bbn-anonymous :is="scrollable ? 'bbn-scroll' : 'div'"
+                 class="bbn-w-100"
+                 ref="scroll"
+                 :offset-y="$refs.thead ? [$refs.thead.getBoundingClientRect().height, 0] : [0,0]"
+                 @resize="resizeWidth">
+        <table :style="{width: totalWidth}"
+               ref="table"
+               v-if="currentColumns.length"
+               class="bbn-table-table">
+          <colgroup>
+            <template v-for="(groupCol, groupIndex) in groupCols">
+              <col v-for="(col, i) in groupCol.cols"
+                  v-show="!col.hidden"
+                  :style="{width: col.realWidth + 'px'}"
+                  :key="groupIndex + '-'+ i">
+            </template>
+          </colgroup>
+          <thead v-if="titles" ref="thead">
+            <tr v-if="titleGroups">
+              <template v-for="(groupCol, groupIndex) in groupCols">
+                <th v-for="(col, i) in titleGroupsCells(groupIndex)"
+                    :colspan="col.colspan"
+                    :style="{
+                      zIndex: (col.left !== undefined) || (col.right !== undefined) ? 4 : 3,
+                      top: '0px',
+                      left: col.left !== undefined ? (col.left + 'px') : '',
+                      right: col.right !== undefined ? (col.right + 'px') : '',
+                      width: col.width + 'px'
+                    }"
+                    :class="['bbn-table-fixed-cell', {
+                      'bbn-table-fixed-cell-left': groupIndex === 0,
+                      'bbn-table-fixed-cell-left-last': (groupIndex === 0) && !titleGroupsCells(groupIndex)[i+1],
+                      'bbn-table-fixed-cell-right': groupIndex === 2,
+                      'bbn-table-cell-first': (groupIndex === 1)
+                        && titleGroupsCells(groupIndex).length
+                        && (i === 0)
+                    }]"
+                    :title="col.text">
+                  <bbn-anonymous v-if="col.component"
+                            :is="col.component"
+                            :source="col"
+                  ></bbn-anonymous>
+                  <div class="bbn-100 bbn-table-title-group" v-else>
+                    <div :class="[col.cls, 'bbn-ellipsis']"
+                        :style="col.style"
+                        v-html="col.text"
+                    ></div>
+                  </div>
+                </th>
+              </template>
+            </tr>
+            <!-- Titles -->
+            <tr>
+              <template v-for="(groupCol, groupIndex) in groupCols">
+                <th v-for="(col, i) in groupCol.cols"
+                    v-show="!col.hidden"
+                    :style="{
+                      left: col.left !== undefined ? (col.left + 'px') : '',
+                      right: col.right !== undefined ? (col.right + 'px') : '',
+                      width: col.realWidth + 'px',
+                      zIndex: (col.left !== undefined) || (col.right !== undefined) ? 4 : 3,
+                      top: titleGroups ? '39px' : '0px'
+                    }"
+                    :class="['bbn-table-fixed-cell', {
+                      'bbn-table-fixed-cell-left': groupIndex === 0,
+                      'bbn-table-fixed-cell-left-last': (groupIndex === 0) && !groupCol.cols[i+1],
+                      'bbn-table-fixed-cell-right': groupIndex === 2,
+                      'bbn-table-cell-first': (groupIndex === 1)
+                        && groupCols[0].cols.length
+                        && (i === 0)
+                    }]"
+                    :title="col.ftitle || col.title || col.field || ' '"
+                    v-resizable.right="resizable && col.resizable && !!groupCol.cols[i+1] ? {data: {column: col, columnIndex: i, groupColIndex: groupIndex}} : false"
+                    @resize="onUserResize">
+                  <i :class="{
+                      nf: true,
+                      'nf nf-mdi-filter_variant': true,
+                      'bbn-p': true,
+                      'bbn-red': hasFilter(col)
+                    }"
+                    v-if="showFilterOnColumn(col)"
+                    @click="showFilter(col, $event)"/>
+                  <div v-if="col.isSelection" :title="_('Check all')">
+                    <bbn-checkbox v-model="allRowsChecked"/>
+                  </div>
+                  <div v-else-if="col.isExpander" :title="_('Expand all')">
+                    <!-- @todo an icon for expanding all/none -->
+                  </div>
+                  <bbn-anonymous v-else-if="col.tcomponent"
+                            :is="col.tcomponent"
+                            :source="col"/>
+                  <span class="bbn-p"
+                        v-else-if="sortable && (col.sortable !== false) && !col.buttons"
+                        @click="sort(col)">
+                    <span v-if="col.encoded"
+                          v-text="col.title || col.field || ' '"
+                          :title="col.ftitle || col.title || col.field"/>
+                    <span v-else
+                          v-html="col.title || col.field || ' '"
+                          :title="col.ftitle || col.title || col.field || ' '"/>
+                  </span>
+                  <span v-else>
+                    <span v-if="col.encoded"
+                          v-text="col.title || col.field || ' '"
+                          :title="col.ftitle || col.title || col.field || ' '"/>
+                    <span v-else
+                          v-html="col.title || col.field || ' '"
+                          :title="col.ftitle || col.title || col.field || ' '"/>
+                  </span>
+                  <i v-if="isSorted(col)"
+                    :class="{
+                      'bbn-table-sortable-icon': true,
+                      'nf nf-fa-caret_up': isSorted(col).dir === 'ASC',
+                      'nf nf-fa-caret_down': isSorted(col).dir === 'DESC',
+                  }"/>
+                </th>
+              </template>
+            </tr>
+          </thead>
+          <tbody ref="tbody"
+                 :class="{
+                   'bbn-overlay': ((!filteredData.length && !tmpRow) || isLoading) && !!scrollable
+                 }">
+            <tr v-if="(!filteredData.length && !tmpRow) || isLoading"
+                :class="{
+                  'bbn-overlay': !!scrollable,
+                  'bbn-middle': !!scrollable
+                }"
+                :style="{
+                  paddingTop: $refs.thead && !!scrollable ? $refs.thead.getBoundingClientRect().height + 'px' : 0,
+                  maxWidth: !!scrollable ? lastKnownWidth + 'px' : '',
+                  left: !!scrollable && getRef('scroll') ? getRef('scroll').currentX + 'px' : ''
+                }">
+              <td :colspan="currentColumns && !scrollable ? currentColumns.length : ''">
+                <div class="bbn-spadded bbn-background bbn-c">
+                  <div v-if="!isLoading"
+                       v-html="noData || ' '"/>
+                  <div v-else-if="loader"
+                       class="bbn-vmiddle">
+                    <bbn-loadicon class="bbn-vmiddle"
+                                  :size="24"/>
+                    <span class="bbn-xl bbn-b bbn-left-sspace"
+                          v-text="currentLoaderText"/>
+                  </div>
+                </div>
+              </td>
+            </tr>
+            <template v-else>
+              <tr v-for="(d, i) in items"
+                  :key="d.rowKey"
+                  @focusout="focusout(i)"
+                  :index="i"
+                  :class="[{
+                    'bbn-alt': !groupable && (d.expanderIndex !== undefined) ?
+                      !!(d.expanderIndex % 2) :
+                      !!(d.rowIndex % 2),
+                    'bbn-header': !!(d.aggregated || d.groupAggregated),
+                  }, getTrClass(d.data)]"
+                  :style="getTrStyle(d.data)"
+                  ref="rows">
+                <!-- Group lines just have the cell with the expander and a single big cell -->
+                <template v-if="groupable && d.group && currentColumns && currentColumns.length">
+                  <td :class="[getTrClass(d.data), (currentColumns[0].fixed ? ' ' + cssRuleName + ' bbn-table-fixed-cell bbn-table-fixed-cell-left' : '')]"
+                      :style="[{
+                        left: currentColumns[0].left !== undefined ? currentColumns[0].left + 'px' : '',
+                        width: currentColumns[0].realWidth
+                      }, getTrStyle(d.data)]">
+                    <div @click="toggleExpanded(d.index)"
+                        class="bbn-table-expander bbn-p bbn-unselectable bbn-spadded bbn-c"
+                        v-if="d.expander"
+                        @keydown.space="toggleExpanded(d.index)"
+                        tabindex="0">
+                      <i :class="'nf nf-fa-caret_' + (isExpanded(d) ? 'down' : 'right') + ' bbn-lg'"
+                      ></i>
+                    </div>
+                  </td>
+                  <td :class="currentClass(cols[group], d.data, i) + (currentColumns[0].fixed ? ' ' + cssRuleName + ' bbn-table-fixed-cell bbn-table-cell-left' : '')"
+                      :style="{
+                        left: currentColumns[1].left !== undefined ? currentColumns[1].left + 'px' : 'auto',
+                        width: 'auto',
+                        borderRight: '0px',
+                        overflow: 'unset'
+                    }">
+                    <div :class="[currentClass(cols[group], d.data, i), {'bbn-spadded': !cols[group].component}]"
+                         :style="{
+                            width: lastKnownWidth - groupCols[currentColumns[0].isLeft ? 0 : 1].cols[0].realWidth - borderLeft - borderRight + 'px',
+                            backgroundColor: 'transparent !important'
+                          }">
+                      <!--span v-if="!isGroupedCell(groupIndex, d)"></span-->
+                      <bbn-anonymous v-if="cols[group].component"
+                                :is="cols[group].component"
+                                class="bbn-spadded"
+                                :source="d.data"/>
+                      <div v-else
+                           v-html="render(d.data, cols[group], d.index) + (d.expanded ? '' : ' (' + d.num + ')')"/>
+                    </div>
+                  </td>
+                  <td :colspan="currentColumns.length - 2"
+                      style="border-left: 0px"
+                      :class="getTrClass(d.data)"/>
+                </template>
+                <!--td v-else-if="d.expansion && !selection"
+                    :class="col.fixed ? cssRuleName : ''"
+                    :colspan="currentColumns.length">
+                  &nbsp;
+                </td-->
+                <template v-else-if="d.expansion">
+                  <td :class="[getTrClass(d.data), (currentColumns[0].fixed ? ' ' + cssRuleName + ' bbn-table-fixed-cell bbn-table-fixed-cell-left' : '')]"
+                      :style="{
+                        left: currentColumns[0].left !== undefined ? currentColumns[0].left + 'px' : '',
+                        width: currentColumns[0].realWidth
+                      }"/>
+                  <td :class="[getTrClass(d.data), (currentColumns[1].fixed ? ' ' + cssRuleName + ' bbn-table-fixed-cell bbn-table-fixed-cell-left' : '')]"
+                      :style="{
+                        left: currentColumns[1].left !== undefined ? currentColumns[1].left + 'px' : '',
+                        width: currentColumns[1].realWidth
+                      }"
+                      v-if="d.selection">
+                    <div class="bbn-block bbn-spadded">
+                      <div class="bbn-c bbn-w-100">
+                        <bbn-checkbox :checked="d.selected"
+                                      :value="true"
+                                      :novalue="false"
+                                      :strict="true"
+                                      @click.stop
+                                      @beforechange="beforeSelect(i, ...arguments)"
+                                      @change="checkSelection(i)"
+                                      class="bbn-middle bbn-flex"/>
+                      </div>
+                    </div>
+                  </td>
+                  <td :class="[getTrClass(d.data), (currentColumns[0].fixed ? ' ' + cssRuleName + ' bbn-table-fixed-cell bbn-table-cell-left' : '')]"
+                      :style="{
+                        left: currentColumns[1].left !== undefined ? currentColumns[1].left + 'px' : 'auto',
+                        width: 'auto',
+                        borderRight: '0px',
+                        overflow: 'unset'
+                      }">
+                    <div class="bbn-block"
+                         :style="{
+                            width: lastKnownWidth - groupCols[currentColumns[0].isLeft ? 0 : 1].cols[0].realWidth - borderLeft - borderRight + 'px',
+                            backgroundColor: 'transparent !important'
+                          }">
+                      <bbn-anonymous v-if="typeof(expander) !== 'function'"
+                                :is="expander"
+                                class="bbn-spadded"
+                                :source="d.data"/>
+                      <bbn-anonymous v-else-if="(typeof(expander(d)) === 'object')"
+                                :is="expander(d)"
+                                :source="d.data"/>
+                      <div v-else
+                           v-html="expander(d.data, i)"/>
+                    </div>
+                  </td>
+                  <td :colspan="currentColumns.length - 2"
+                      :style="[getTrStyle(d.data), {borderLeft: 0}]"
+                      :class="getTrClass(d.data)"/>
+                </template>
+                <td v-else-if="d.full"
+                    :colspan="currentColumns.length">
+                  <bbn-anonymous v-if="d.component"
+                            :is="d.component"
+                            v-bind="d.options || {}"
+                            :source="col.mapper ? col.mapper(d.data) : d.data"/>
+                  <div v-else
+                       v-html="render(d.data, col, i)"/>
+                </td>
+                <td v-else-if="d.footer && groupFooter && groupable"
+                    :colspan="currentColumns.length">
+                  <div v-if="typeof groupFooter === 'function'"
+                       v-html="groupFooter(d.data)"/>
+                  <bbn-anonymous v-else
+                             :is="groupFooter"
+                             :source="d.data"/>
+                </td>
+                <td v-else
+                    v-for="(col, index) in currentColumns"
+                    :class="[currentClass(col, d.data, i), cssRuleName, {
+                      'bbn-table-fixed-cell': !!col.fixed,
+                      'bbn-table-fixed-cell-left': col.isLeft,
+                      'bbn-table-fixed-cell-left-last': col.isLeft
+                        && (!currentColumns[index+1] || !currentColumns[index+1].isLeft),
+                      'bbn-table-fixed-cell-right': col.isRight,
+                      'bbn-table-cell-first': !col.isLeft && !col.isRight && ((index === 0) || (!!currentColumns[index-1].isLeft)),
+                      'bbn-table-edit-buttons': !!col.buttons && isEdited(d.data, col, i),
+                      'bbn-table-buttons': !!col.buttons
+                    }]"
+                    :tabindex="editable && (col.editable !== false) ? 0 : -1"
+                    @focusin="focusin(i, $event)"
+                    @click="clickCell(col, index, d.index)"
+                    @dblclick="dbclickCell(col, index, d.index, d.data, i)"
+                    :style="{
+                      left: col.left !== undefined ? (col.left + 'px') : 'auto',
+                      right: col.right !== undefined ? (col.right + 'px') : 'auto',
+                      width: col.realWidth
+                    }"
+                    :ref="'td' + i">
+                  <div class="bbn-block bbn-spadded"
+                       :style="{maxHeight: currentMaxRowHeight}">
+                    <!-- Checkboxes -->
+                    <div v-if="col.isSelection" class="bbn-c bbn-w-100">
+                      <bbn-checkbox v-if="d.selection"
+                                    :checked="d.selected"
+                                    :value="true"
+                                    :novalue="false"
+                                    :strict="true"
+                                    @click.stop
+                                    @beforechange="beforeSelect(i, ...arguments)"
+                                    @change="checkSelection(i)"
+                                    class="bbn-middle bbn-flex"/>
+                    </div>
+                    <!-- Aggregate -->
+                    <template v-else-if="d.aggregated || d.groupAggregated">
+                      <span v-if="col.isAggregatedTitle"
+                            :class="d.aggregated ? 'bbn-b' : ''"
+                            v-text="aggregateExp[d.name]"/>
+                      <div v-else-if="col.aggregate"
+                          v-html="render(d.data, col, i)"/>
+                      <span v-else> </span>
+                      <!-- The row is an aggregate and there are no other cells -->
+                    </template>
+                        <!-- Expander -->
+                    <div v-else-if="col.isExpander"
+                        @click="toggleExpanded(d.index)"
+                        class="bbn-table-expander bbn-lg bbn-p bbn-unselectable bbn-c">
+                      <i :class="'nf nf-fa-caret_' + (isExpanded(d) ? 'down' : 'right') + ' bbn-unselectable'"
+                        v-if="d.expander"
+                        tabindex="0"/>
+                      <span v-else>&nbsp;</span>
+                    </div>
+                    <template v-else>
+                      <span class="bbn-table-dirty bbn-top-left"
+                            v-if="isDirty(d, col, i)"/>
+                      <div v-if="isEdited(d.data, col, i)">
+                        <div v-if="(editMode === 'inline') && (editable !== 'nobuttons') && (col.index === colButtons)">
+                          <bbn-button :text="_('Save')"
+                                      :disabled="!isEditedValid"
+                                      icon="nf nf-fa-save"
+                                      :notext="true"
+                                      @focusin.stop
+                                      @click.prevent.stop="saveInline"
+                                      style="margin: 0 .1rem"/>
+                          <bbn-button :text="_('Cancel')"
+                                      icon="nf nf-fa-times"
+                                      :notext="true"
+                                      @focusin.stop
+                                      @click.prevent.stop="cancel"
+                                      style="margin: 0 .1rem"/>
+                        </div>
+                        <bbn-anonymous v-else-if="(editMode === 'inline') && isValidField(col.field) && (col.editable !== false)"
+                                   v-bind="getEditableOptions(col, d.data)"
+                                   :is="getEditableComponent(col, d.data)"
+                                   @click.stop
+                                   v-model="editedRow[col.field]"
+                                   style="width: 100%"/>
+                        <!--<bbn-field v-else-if="(editMode === 'inline') && isValidField(col.field) && (col.editable !== false)"
+                                   v-bind="col"
+                                   mode="write"
+                                   @click.stop
+                                   v-model="editedRow[col.field]"
+                                   style="width: 100%"/>-->
+                        <bbn-field v-else-if="isValidField(col.field) && !col.render && !col.buttons"
+                                  v-bind="col"
+                                  @click.stop
+                                  :key="d.rowKey"
+                                  :value="d.data[col.field]"
+                                  :data="d.data"/>
+                        <div v-else-if="!col.buttons && col.render"
+                             v-html="col.render(d.data, col, i)"/>
+                        <div v-else-if="!col.buttons"
+                             v-html="render(d.data, col, i)"/>
+                        <div v-else> </div>
+                      </div>
+                      <bbn-anonymous v-else-if="col.component"
+                                :is="col.component"
+                                v-bind="getColOptions(d.data, col, i)"
+                                :source="col.mapper ? col.mapper(d.data) : d.data"/>
+                      <template v-else-if="col.buttons && (buttonMode === 'dropdown')">
+                        <bbn-dropdown :source="buttonSource(d.data, col, i)"
+                                      :placeholder="col.title.trim() === '' ? _('Action') : col.title"
+                                      @select="_execCommand(button, d.data, col, i, $event)"/>
+                      </template>
+                      <template v-else-if="col.buttons && (buttonMode === 'menu')">
+                        <bbn-context :source="buttonSource(d.data, col, i)">
+                          <span class="bbn-iblock bbn-lg">
+                            <i :class="buttonIcon"/>
+                          </span>
+                        </bbn-context>
+                      </template>
+                      <template v-else-if="col.buttons && (colButtons === col.index)">
+                        <bbn-button v-for="(button, bi) in buttonSource(d.data, col, i)"
+                                    :key="bi"
+                                    v-bind="button"
+                                    @focusin.prevent.stop
+                                    @focusout.prevent.stop
+                                    @click.prevent.stop="_execCommand(button, d.data, col, i, $event)"
+                                    style="margin: 0 .1rem"/>
+                      </template>
+                      <template v-else-if="col.buttons">
+                        <bbn-button v-for="(button, bi) in (Array.isArray(col.buttons) ? col.buttons : col.buttons(d.data, col, i))"
+                                    :key="bi"
+                                    v-bind="button"
+                                    @focusin.prevent.stop
+                                    @focusout.prevent.stop
+                                    @click.prevent.stop="_execCommand(button, d.data, col, i, $event)"
+                                    style="margin: 0 .1rem"/>
+                      </template>
+                      <div v-else
+                           v-html="render(d.data, col, i)"></div>
+                      <table-dots :source="{
+                                        column: col,
+                                        index: index,
+                                        dataIndex: d.index,
+                                        data: d.data,
+                                        itemIndex: i
+                                      }"/>
+                    </template>
+                  </div>
+                </td>
+              </tr>
+            </template>
+          </tbody>
+        </table>
+      </bbn-anonymous>
+    </div>
+    <!-- Footer -->
+    <bbn-pager class="bbn-table-footer bbn-no-border-right bbn-no-border-left bbn-no-border-bottom"
+               v-if="hasPager"
+               :element="_self"
+               :item-name="itemName"
+               :page-name="pageName"
+               :buttons="footerButtons"/>
+    <bbn-anonymous v-else-if="(typeof footer === 'string') || (typeof footer === 'object')"
+               :is="footer"
+               class="bbn-table-footer bbn-no-border-right bbn-no-border-left bbn-no-border-bottom"/>
+    <div v-else-if="(typeof footer === 'function') && footer()"
+         v-html="footer()"
+         class="bbn-table-footer bbn-no-border-right bbn-no-border-left bbn-no-border-bottom"/>
+  </div>
+  <bbn-floater v-if="currentFilter"
+               class="bbn-table-floating-filter bbn-widget"
+               :element="filterElement"
+               @close="currentFilter = false"
+               :auto-hide="true"
+               :scrollable="true"
+               :left="floatingFilterX"
+               :top="floatingFilterY">
+    <bbn-filter v-bind="getFilterOptions()"
+                @set="onSetFilter"
+                @unset="unsetCurrentFilter"
+                class="bbn-w-100"/>
+    <div v-if="multifilter"
+         class="bbn-table-filter-link bbn-p bbn-b bbn-i bbn-w-100 bbn-bottom-padded bbn-left-padded bbn-right-padded bbn-r"
+         @click="openMultiFilter">
+      <i class="zmdi zmdi-filter-list"/>
+      <span v-text="_('Open the full filter')"/>
+    </div>
+  </bbn-floater>
+  <bbn-popup ref="popup" v-if="inTable === false"/>
+  <bbn-floater v-if="focusedElement && (editMode === 'inline') && editedRow"
+               class="bbn-widget"
+               :element="focusedElement"
+               :scrollable="true"
+               tabindex="-1"
+               :left="focusedElementX"
+               :top="focusedElementY">
+        <bbn-button :text="_('Save')"
+                    :disabled="!isEditedValid"
+                    icon="nf nf-fa-save"
+                    :notext="true"
+                    @click.prevent.stop="saveInline"
+                    style="margin: 0 .1rem"
+                    tabindex="-1"/>
+        <bbn-button :text="_('Cancel')"
+                    icon="nf nf-fa-times"
+                    :notext="true"
+                    @click.prevent.stop="cancel"
+                    style="margin: 0 .1rem"
+                    tabindex="-1"/>
+  </bbn-floater>
+</div>

@@ -1,0 +1,69 @@
+<div :class="['bbn-100', 'bbn-unselectable', componentClass]">
+  <span class="bbn-loadbar-content bbn-h-100 bbn-flex-width"
+        @click="info = !info"
+        ref="bar">
+    <span class="bbn-loadbar-state bbn-hxspadded bbn-c bbn-block bbn-h-100 bbn-middle">
+      <bbn-loadicon v-if="currentItem.loading" class="bbn-blue"></bbn-loadicon>
+      <i v-else-if="currentItem.error" class="nf nf-fa-times_circle bbn-red"></i>
+      <i v-else-if="currentItem.success" class="nf nf-fa-check bbn-green"></i>
+      <i v-else-if="currentItem.abort" class="nf nf-mdi-stop bbn-orange"></i>
+    </span>
+    <span class="bbn-flex-fill">
+      <span class="bbn-overlay">
+        <span class="bbn-h-100 bbn-vmiddle bbn-s">
+          <a href="javascript:;"
+             :title="text + ' ' + _('Loading')"
+             style="color: inherit; cursor: default"
+             v-if="currentItem"
+             v-text="currentItem.url"
+          ></a>
+        </span>
+      </span>
+    </span>
+  </span>
+  <bbn-floater v-if="info"
+               :element="$refs.bar"
+               ref="floater"
+               :auto-hide="true"
+               :title="_('Requests\' history')"
+               :closable="true"
+               :container="$root.$el"
+               :scrollable="true"
+               @close="info = false"
+               width="100%"
+               max-height="60vw"
+  >
+    <div class="bbn-padded bbn-w-100">
+      <bbn-input class="bbn-w-100"
+                 button-right="nf nf-mdi-send"
+                 v-model="link"
+                 @keydown.enter="go"
+                 :focused="true"
+                 @clickRightButton="go"
+      ></bbn-input>
+      <ul class="bbn-reset bbn-w-100 bbn-ul">
+        <li v-for="it of items">
+          <bbn-context tag="div"
+                       class="bbn-vmiddle"
+                       :max-width="300"
+                       :source="contextMenu(it)">
+            <span class="bbn-loadbar-state bbn-hxspadded bbn-c">
+              <bbn-loadicon v-if="it.loading" class="bbn-blue"></bbn-loadicon>
+              <i v-else-if="it.error" class="nf nf-fa-times_circle bbn-red"></i>
+              <i v-else-if="it.success" class="nf nf-fa-check bbn-green"></i>
+              <i v-else-if="it.abort" class="nf nf-mdi-stop bbn-orange"></i>
+            </span>
+            <div class="bbn-loadbar-time bbn-c bbn-s">
+              <span v-text="renderDuration(it.duration)"></span>
+            </div>
+            <span class="bbn-hxspadded bbn-s" v-text="it.url"></span>
+          </bbn-context>
+          <div v-if="it.error && it.errorMessage"
+                class="bbn-loadbar-error bbn-red"
+                v-text="it.errorMessage"
+          ></div>
+        </li>
+      </ul>
+    </div>
+  </bbn-floater>
+</div>

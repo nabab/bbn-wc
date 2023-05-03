@@ -1,0 +1,72 @@
+<div :class="[
+       componentClass,
+       'bbn-iblock',
+       'bbn-textbox',
+       {'bbn-disabled': !!isDisabled}
+     ]"
+     @mouseenter="isOverDropdown = true"
+     @mouseleave="isOverDropdown = false"
+     @focusin="isActive = true"
+     @focusout="onFocusOut">
+  <div :class="['bbn-rel', 'bbn-search-container', 'bbn-flex-width', 'bbn-vmiddle', currentItemCls, {
+    'bbn-search-container-native': native
+  }]">
+    <div v-if="sourceIcon && hasValue && !!currentItemIcon"
+         class="bbn-left-xspadded">
+      <i :class="currentItemIcon"
+         @click.stop="click" />
+    </div>
+    <div v-if="sourceImg && hasValue && !!currentItemImg"
+         class="bbn-left-xspadded">
+      <img src="currentItemImg"
+           @click.stop="click">
+    </div>
+    <bbn-input :tabindex="0"
+               class="bbn-no-border bbn-i"
+               v-model="filterString"
+               ref="input"
+               @focus="selectText"
+               @blur="inputIsVisible = false"
+               autocomplete="off"
+               @keydown.stop="keydown"
+               @change="onChange"
+               :autosize="autosize"
+               autocorrect="off"
+               autocapitalize="off"
+               spellcheck="false"
+               :button-right="currentIcon"
+               :button-right-disabled="!filteredData.length"
+               :action-right="() => {isOpened = !isOpened}"
+               :nullable="true"
+               :placeholder="placeholder"/>
+  </div>
+  <bbn-portal v-if="portalSelector"
+              :selector="portalSelector">
+    <bbn-floater v-if="!popup
+                    && filteredData.length
+                    && !isDisabled
+                    && !native
+                    && ready
+                    && isOpened"
+                :element="asMobile ? undefined : $el"
+                :max-height="asMobile ? undefined : maxHeight"
+                :min-width="$el.clientWidth"
+                :width="asMobile ? '100%' : undefined"
+                :height="asMobile ? '100%' : undefined"
+                ref="list"
+                :children="null"
+                :source-value="sourceValue"
+                :source-text="sourceText"
+                :source-url="sourceUrl"
+                :source-icon="sourceIcon"
+                :title="floaterTitle"
+                :buttons="asMobile ? realButtons : []"
+                :item-component="realComponent"
+                @mouseenter="isOverDropdown = true"
+                @mouseleave="isOverDropdown = false"
+                @ready="attachList"
+                @select="select"
+                @close="isOpened = false"
+                :source="filteredData"/>
+  </bbn-portal>
+</div>

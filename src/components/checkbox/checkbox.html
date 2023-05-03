@@ -1,0 +1,21 @@
+<span :class="['bbn-iblock', componentClass]">
+  <input type="checkbox"
+         :id="id"
+         :name="name"
+         :value="value"
+         class="bbn-checkbox"
+         :required="required"
+         :disabled="isDisabled"
+         :readonly="readonly"
+         @change="toggle"
+         :checked="state"
+         ref="element"
+				 tabindex="0">
+  <label class="bbn-checkbox-label bbn-iflex bbn-vmiddle"
+         :for="id"
+         @click="onClick">
+		<span class="bbn-left-spadded"
+					v-html="label"
+					v-if="label"/>
+	</label>
+</span>

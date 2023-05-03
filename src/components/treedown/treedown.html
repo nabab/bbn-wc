@@ -1,0 +1,56 @@
+<div :class="[componentClass, 'bbn-iblock', 'bbn-textbox', 'bbn-reactive', {'bbn-disabled': !!isDisabled}]"
+     @mouseleave="leave"
+     @focusin="isActive = true"
+     @focusout="isActive = false"
+>
+  <div class="bbn-flex-width bbn-h-100">
+    <div class="bbn-flex-fill"
+         @click.stop="click">
+      <input :disabled="isDisabled"
+              class="bbn-unselectable bbn-textbox bbn-no-border bbn-abs bbn-top-left"
+              @keydown.stop="keydownInput"
+              ref="input"
+              :required="required"
+              readonly="readonly"
+              :placeholder="filterString ? '' : placeholder"
+              :tabindex="autocomplete || isDisabled || readonly ? -1 : 0"
+              :value="filterString">
+      <input v-if="autocomplete && !isDisabled && !readonly"
+              tabindex="0"
+              class="bbn-textbox bbn-no-border"
+              v-model="filterString"
+              ref="filter"
+              @focus="selectText"
+              autocomplete="off"
+              :required="required"
+              :readonly="readonly"
+              @keydown.stop="keydownFilter"
+              @change="ready = true"
+              :name="name">
+    </div>
+    <div>
+      <bbn-button :icon="'nf nf-fa-caret_' + (isOpened && !isDisabled && !readonly && filteredData.length ? 'up' : 'down')"
+                  class="bbn-p bbn-button-right bbn-no-vborder"
+                  @click.prevent.stop="click"
+                  tabindex="-1"
+                  :disabled="isDisabled">
+      </bbn-button>
+    </div>
+  </div>
+  <input type="hidden"
+         v-model="value"
+         ref="element"
+         :name="name">
+  <bbn-floater v-if="!isDisabled && !readonly && isOpened"
+               :element="$el"
+               :max-height="maxHeight"
+               :min-width="currentWidth"
+               ref="list"
+               :uid="sourceValue"
+               :item-component="realComponent"
+               @select="select"
+               :selected="[value]"
+               @close="isOpened = false"
+               :source="filteredData">
+  </bbn-floater>
+</div>

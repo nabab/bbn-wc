@@ -1,0 +1,21 @@
+<div :class="[{'bbn-iblock':true}, componentClass]"
+>
+  <input :value="ivalue"
+         ref="element"
+         class="bbn-textbox"
+         :disabled="isDisabled"
+         :required="required"
+         readonly="readonly"
+  >
+  <input type="hidden"
+         :value="value"
+         :name="name"
+         ref="hinput"
+  > &nbsp;
+  <bbn-button ref="button"
+              @click="build()"
+              class="bbn-no-vborder"
+              icon="nf nf-fa-search"
+  >
+  </bbn-button>
+</div>
